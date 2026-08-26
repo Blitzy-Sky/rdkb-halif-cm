@@ -8,12 +8,14 @@ This table records revisions of *this document*. It is not the version of the in
 | --- | --- | --- |
 | 08/24/26 | First recorded revision of this document. Brought to the canonical `HAL` specification topic set: every declared `API` is named, the four version identities are separated, the asynchronous-notification and device-management claims are corrected against `include/cm_hal.h`, and the placeholder identifiers in the sequence diagram are replaced with declared ones. | 0.1.0 |
 
+**Provenance of this page.** It was renamed from `docs/pages/CMhalSpec.md` to `docs/pages/halSpec.md` in the same change that rewrote it against the canonical topic set. Git records a rename only where the two versions still resemble each other, and a full rewrite does not, so `git log --follow -- docs/pages/halSpec.md` begins at that change: the revisions before it are reached with `git log -- docs/pages/CMhalSpec.md`.
+
 Four version identities exist around this interface, and a reader who conflates them will draw the wrong conclusion about how mature it is:
 
 - **Document revision** \- the `Version` column above. No revision of this document was recorded before this one, so the table begins here rather than claiming a history it cannot show.
 - **Release tag** \- `1.0.1`, the nearest ancestor tag of the revision this document describes. `CHANGELOG.md` records `1.0.1` without a date, carrying a header syntax fix, and `1.0.0` on 7 June 2024, which migrated the `CM HAL` header into this repository. A later tag `1.1.0` exists in the repository, but it is not an ancestor of this revision and is absent from `CHANGELOG.md`, so no later release is claimed here.
 - **Interface version** \- **none is published.** `include/cm_hal.h` declares no version macro; its complete macro set is tabulated under `Data Structures and Defines` and holds type aliases, status codes and bounds only. A caller therefore cannot test which revision of the interface it compiled against, and `Variability Management` states what governs the interface's evolution instead.
-- **Generated-site version string** \- `docs/generate_docs.sh` derives `PROJECT_VERSION` from `git describe --tags`, which yields a string of the form `<tag>-<commits-since-tag>-g<abbreviated-hash>`; at the revision this document describes that is `1.0.1-5-g2e9447f`. It is a build identifier, not a released version, and must not be read as one.
+- **Generated-site version string** \- `docs/generate_docs.sh` derives `PROJECT_VERSION` from `git describe --tags`, which yields a string of the form `<tag>-<commits-since-tag>-g<abbreviated-hash>`. It is a build identifier, not a released version, and must not be read as one. Its value is computed when the documentation is generated and changes with every commit, including the commit that would record it, so no literal value is reproduced here: a reader who needs the string for the revision in front of them runs `git describe --tags` against that revision.
 
 ## Acronyms
 
@@ -119,7 +121,7 @@ The interface is not required to be thread safe.
 
 Vendors can implement internal threading and event mechanisms for operational purposes. These mechanisms must ensure thread safety when interacting with the provided interface. Additionally, they must guarantee cleanup of resources upon closure.
 
-The consequence for a caller is concrete: two threads must not call into this interface concurrently unless the caller serialises them itself. **This interface does not specify which thread the diplexer variation callback is invoked on**, and neither the typedef at `cm_hal.h:1209` nor its registration function at `cm_hal.h:1228` states it, so a handler must serialise its own access to caller state rather than assume it runs on the registering thread.
+The consequence for a caller is concrete: two threads must not call into this interface concurrently unless the caller serialises them itself. **This interface does not specify which thread the diplexer variation callback is invoked on**, and neither the typedef at `cm_hal.h:3595` nor its registration function at `cm_hal.h:3664` states it, so a handler must serialise its own access to caller state rather than assume it runs on the registering thread.
 
 ### Process Model
 
@@ -152,7 +154,7 @@ That final escape clause is not decorative: it is what the five caller-frees fun
 
 ### Asynchronous Notification Model
 
-This interface declares exactly one asynchronous notification, and it is the diplexer variation callback. `cm_hal_DiplexerVariationCallback` (`cm_hal.h:1209`) is documented as a "callback function for receiving current Diplexer settings", "invoked when the CM Diplexer settings change", and it is installed by `cm_hal_Register_DiplexerVariationCallback()` (`cm_hal.h:1228`).
+This interface declares exactly one asynchronous notification, and it is the diplexer variation callback. `cm_hal_DiplexerVariationCallback` (`cm_hal.h:3595`) is documented as the "type of the handler the CM HAL invokes when the diplexer settings change" (`cm_hal.h:3553`), which "the implementation invokes ... when the modem's diplexer band edges change" (`cm_hal.h:3556-3557`), and it is installed by `cm_hal_Register_DiplexerVariationCallback()` (`cm_hal.h:3664`).
 
 Four properties of it bind a caller, all stated by the header:
 
@@ -189,8 +191,8 @@ Two departures from that rule are stated by the interface itself and are the one
 
 | Return shape | Declarations | What a caller does with it |
 | --- | --- | --- |
-| A status code | 46 of the 51 declarations, plus the callback | Compare against `RETURN_OK` and `RETURN_ERR`. The reason for a failure is not reported; the header's own per-function text names the usual causes - null pointers, allocation failure, retrieval error - but the code does not distinguish them. |
-| A value, not a status | `docsis_GetUSChannelId()` returns the channel identifier, `docsis_GetDownFreq()` returns the frequency, and `docsis_GetDocsisEventLogItems()` returns the number of log entries it retrieved | There is no error code to test. `docsis_GetDocsisEventLogItems()` is the well-behaved case: a count of zero is a meaningful answer. For the other two the interface defines no sentinel, so a caller cannot distinguish a failed read from a genuine value and should treat the surrounding state as its only evidence. |
+| A status code | 45 of the 51 declarations, plus the callback | Compare against `RETURN_OK` and `RETURN_ERR`. The reason for a failure is not reported; the header's own per-function text names the usual causes - null pointers, allocation failure, retrieval error - but the code does not distinguish them. |
+| A value, not a status | `docsis_GetUSChannelId()` returns the channel identifier, `docsis_GetDownFreq()` returns the frequency, `docsis_GetDocsisEventLogItems()` returns the number of log entries it retrieved, and `cm_hal_Get_HTTP_Download_Status()` returns a download progress or error value | There is no error code to test. `docsis_GetDocsisEventLogItems()` is the well-behaved case: a count of zero is a meaningful answer. `cm_hal_Get_HTTP_Download_Status()` is the one value return that names its own failures, in the `400` - `407` and `500` range documented at `cm_hal.h:2378`, and `0` means "not started" rather than "succeeded". For the remaining two the interface defines no sentinel, so a caller cannot distinguish a failed read from a genuine value and should treat the surrounding state as its only evidence. |
 | Nothing at all | `docsis_SetUSChannelId()` and `docsis_SetStartFreq()` are declared `void` | The write cannot be confirmed through the call. A caller that must know whether it took effect reads the value back with `docsis_GetUSChannelId()` or `docsis_GetDownFreq()`. |
 
 `docsis_LLDgetEnableStatus()` is the one function returning a three-way result: `ENABLE`, `DISABLE` or `RETURN_ERR`. Because `DISABLE` also covers a missing bootfile entry, only `RETURN_ERR` indicates a failed read.
@@ -224,6 +226,14 @@ Logs must be categorized according to the following log levels, as defined by th
 Each log entry should include a timestamp, the log level, and a message describing the event or condition. This standard format will facilitate easier parsing and analysis of log files across different vendors and components.
 
 Logging carries more weight in this interface than in one with a richer error vocabulary: as `Internal Error Handling` records, most declarations report only `RETURN_OK` or `RETURN_ERR`, so the vendor log is where the reason for a failure has to be found.
+
+**Credentials and device identifiers must not be logged.** This interface moves both, so the requirements below are normative rather than advisory and they bind the vendor implementation and the RDK-B caller equally. They are stated here because the interface declares no redaction helper and no secure-buffer type, so nothing enforces them mechanically.
+
+- **The protected values, named exactly.** The `SNMPv3` security name and security number carried in every row of the `snmpv3_kickstart_table_t` that `cm_hal_snmpv3_kickstart_initialize` receives are management-plane credentials \- they authenticate an operator to the modem, so a disclosed pair grants that access. The `MAC` addresses and lease detail that `cm_hal_GetDHCPInfo` reports, and the `CPE` `MAC` addresses in the tables the DOCSIS accessors return, are device identifiers that link a unit to a subscriber record and are personal data in that context.
+- **None of them is written to a log at any severity**, placed in a diagnostic file or crash artefact, or included in an error message. The obligation is the caller's as much as the implementation's: a credential is just as exposed by the middleware that supplied it as by the `HAL` that consumed it.
+- **Redact, do not truncate, where a value must be referenced.** A diagnostic that has to record which row of a kickstart table was rejected records the row index and substitutes a fixed redaction marker for the value. A prefix, a suffix or a length is not redaction \- a `MAC` prefix discloses the vendor, and a length alone distinguishes one credential format from another.
+- **Clear after use.** A caller overwrites the buffers holding a security name or security number once the call has returned, rather than leave the material in reusable memory. `include/cm_hal.h` restates this obligation on the declaration itself.
+- **A single failure code does not license logging the input.** Where one of these calls fails and `RETURN_ERR` is the only information available, the diagnostic records the operation and the outcome, never the credential or identifier that was passed.
 
 ### Memory and performance requirements
 
@@ -262,7 +272,7 @@ A caller of that library:
 
 The role of adjusting the interface, guided by versioning, rests solely within architecture requirements. Thereafter, vendors are obliged to align their implementation with a designated version of the interface. As per Service Level Agreement (`SLA`) terms, they may transition to newer versions based on demand needs.
 
-Each API interface will be versioned using [Semantic Versioning 2.0.0](https://semver.org/), the vendor code will comply with a specific version of the interface.
+Each API interface will be versioned using [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html), the vendor code will comply with a specific version of the interface.
 
 **That version is not readable from the header.** `include/cm_hal.h` publishes no version macro, so a caller cannot test at compile time or at runtime which revision of the interface it has, and must take the version from the release it consumed - see `Version History`, which separates the release tag from the three other identities it is often confused with.
 
@@ -308,13 +318,13 @@ The three sub-topics below are derived from the declarations and comments in `in
   - **Initialized:** The system has been initialized but may not yet be fully operational or connected to network services.
   - **Operational:** The modem is fully operational, and all functionality is available.
   - **Error states:** Various functions may return errors if the system is not in an appropriate state for the requested operation.
-- **The modem's own state is observable but not controlled here.** `docsis_getCMStatus()` reports where the modem has reached in `DOCSIS` bring-up and `docsis_GetDOCSISInfo()` reports the same progression field by field; `State Diagram` draws both. A caller reads those states, and the only transitions it can drive are the initialization sequence above and the three recovery operations - `cm_hal_ReinitMac()`, `cm_hal_HTTP_Download_Reboot_Now()` and `cm_hal_FWupdateAndFactoryReset()`.
+- **The modem's own state is observable but not controlled here.** `docsis_getCMStatus()` reports where the modem has reached in `DOCSIS` bring-up and `docsis_GetDOCSISInfo()` reports the same progress field by field; `State Diagram` tabulates both value sets and, because this interface states no transition model over them (`cm_hal.h:942-944`), draws no edges between them. A caller reads those values and polls for a change; the only sequence it can drive is the initialization order above, and the recovery operations - `cm_hal_ReinitMac()`, `cm_hal_HTTP_Download_Reboot_Now()` and `cm_hal_FWupdateAndFactoryReset()` - state no resulting modem status of their own.
 
 ### Data Structures and Defines
 
 A caller of this interface constructs or interprets the types below. Every one is declared in [`include/cm_hal.h`](../../include/cm_hal.h) under the `CM_HAL_TYPES` group, and the field-level documentation is on the declaration itself; the tables here name each type, say where it is declared and what it represents, and leave the members to the header.
 
-**Type aliases** \- `cm_hal.h:47` to `cm_hal.h:82`. Each is wrapped in `#ifndef`, so a caller that already defines the name keeps its own definition. They are what the function signatures in `API Surface` are written in.
+**Type aliases** \- `cm_hal.h:92` to `cm_hal.h:157`. Each is wrapped in `#ifndef`, so a caller that already defines the name keeps its own definition. They are what the function signatures in `API Surface` are written in.
 
 | Alias | Underlying type |
 | --- | --- |
@@ -328,7 +338,7 @@ A caller of this interface constructs or interprets the types below. Every one i
 | `LONG` | `long` |
 | `ULONG` | `unsigned long` |
 
-**Status and boolean constants** \- `cm_hal.h:86` to `cm_hal.h:109`. `Internal Error Handling` gives the semantics.
+**Status and boolean constants** \- `cm_hal.h:162` to `cm_hal.h:202`. `Internal Error Handling` gives the semantics.
 
 | Constant | Value | Represents |
 | --- | --- | --- |
@@ -341,11 +351,11 @@ A caller of this interface constructs or interprets the types below. Every one i
 
 | Constant | Declared at | Represents |
 | --- | --- | --- |
-| `OFDM_PARAM_STR_MAX_LEN` | `cm_hal.h:39` | Maximum length of an `OFDM` parameter string, `64`. |
-| `IPV4_ADDRESS_SIZE` | `cm_hal.h:118` | Octets in an `IPv4` address, `4`. |
-| `ANSC_IPV4_ADDRESS` | `cm_hal.h:135` | A macro expanding to an anonymous union of a `4`-octet array in dotted-decimal order and a `32`-bit value in network byte order. It is the type of the upgrade-server address in `CMMGMT_CM_DOCSIS_INFO` and of the addresses in the `DHCP` information structures. |
-| `EVM_MAX_EVENT_TEXT` | `cm_hal.h:241` | Maximum length of the event text in `CMMGMT_CM_EventLogEntry_t`, `255`. |
-| `MAX_KICKSTART_ROWS` | `cm_hal.h:410` | Maximum number of rows in `snmpv3_kickstart_table_t`, `5`. |
+| `OFDM_PARAM_STR_MAX_LEN` | `cm_hal.h:79` | Maximum length of an `OFDM` parameter string, `64`. |
+| `IPV4_ADDRESS_SIZE` | `cm_hal.h:209` | Octets in an `IPv4` address, `4`. |
+| `ANSC_IPV4_ADDRESS` | `cm_hal.h:238` | A macro expanding to an anonymous union of a `4`-octet array in dotted-decimal order and a `32`-bit value in network byte order. It is the type of the upgrade-server address in `CMMGMT_CM_DOCSIS_INFO` and of the addresses in the `DHCP` information structures. |
+| `EVM_MAX_EVENT_TEXT` | `cm_hal.h:409-418` | Maximum length of the event text in `CMMGMT_CM_EventLogEntry_t`, `255`. |
+| `MAX_KICKSTART_ROWS` | `cm_hal.h:661-682` | Maximum number of rows in `snmpv3_kickstart_table_t`, `5`. |
 
 Those twenty macros are the header's entire valued-macro surface; there is no version macro among them, which is the point `Version History` and `Variability Management` both make.
 
@@ -353,27 +363,27 @@ Those twenty macros are the header's entire valued-macro surface; there is no ve
 
 | Structure | Declared at | Represents |
 | --- | --- | --- |
-| `CMMGMT_CM_DS_CHANNEL` | `cm_hal.h:167` | A downstream channel: identifier, frequency, power level, `SNR`, modulation, octet and error counts, and lock status. |
-| `CMMGMT_CM_US_CHANNEL` | `cm_hal.h:188` | An upstream channel: identifier, frequency, transmit power, channel type, symbol rate, modulation and lock status. |
-| `CMMGMT_CM_DOCSIS_INFO` | `cm_hal.h:202` | `DOCSIS`-related information for the modem: the registration progression tabulated under `State Diagram`, the config file name, attempt counters, `ToD` status, `BPI` state, network access, upgrade-server address, `CPE` allowance, upstream and downstream service-flow parameters including `QoS`, data rates and core version. |
-| `CMMGMT_CM_ERROR_CODEWORDS` | `cm_hal.h:235` | Codeword error statistics: unerrored, correctable and uncorrectable counts. |
-| `CMMGMT_CM_EventLogEntry_t` | `cm_hal.h:246` | One entry of the modem's event log: index, first and last timestamps, occurrence count, level, identifier and text. |
-| `CMMGMT_DML_CM_LOG` | `cm_hal.h:266` | Configuration settings for modem logging. |
-| `CMMGMT_DML_DOCSISLOG_FULL` | `cm_hal.h:281` | A single entry within a `DOCSIS` log. |
-| `CMMGMT_CM_DHCP_INFO` | `cm_hal.h:293` | The modem's `DHCP` configuration. |
-| `CMMGMT_CM_IPV6DHCP_INFO` | `cm_hal.h:312` | The modem's `IPv6` `DHCP` configuration. |
-| `CMMGMT_DML_CPE_LIST` | `cm_hal.h:328` | A single `CPE` entry. |
-| `DOCSIF31_CM_DS_OFDM_CHAN` | `cm_hal.h:338` | Parameters of a `DOCSIS 3.1` `OFDM` downstream channel. |
-| `DOCSIF31_CM_US_OFDMA_CHAN` | `cm_hal.h:376` | Parameters of a `DOCSIS 3.1` `OFDMA` upstream channel. |
-| `DOCSIF31_CMSTATUSOFDMA_US` | `cm_hal.h:399` | Status information for a `DOCSIS 3.1` `OFDMA` upstream channel, including its ranging state and whether the channel is muted. |
-| `fixed_length_buffer_t` | `cm_hal.h:415` | A buffer of fixed length: a `USHORT` byte count and a pointer to the data. |
-| `snmp_kickstart_row_t` | `cm_hal.h:425` | One row of an `SNMP` v3 kickstart configuration: a security name and a security number, each a `fixed_length_buffer_t`. |
-| `snmpv3_kickstart_table_t` | `cm_hal.h:434` | An `SNMP` v3 kickstart configuration table: a row count and up to `MAX_KICKSTART_ROWS` row pointers. |
-| `CM_DIPLEXER_SETTINGS` | `cm_hal.h:443` | Diplexer frequency settings: the upstream and downstream upper band edges in `MHz`. This is the structure the notification handler receives. |
+| `CMMGMT_CM_DS_CHANNEL` | `cm_hal.h:295` | A downstream channel: identifier, frequency, power level, `SNR`, modulation, octet and error counts, and lock status. |
+| `CMMGMT_CM_US_CHANNEL` | `cm_hal.h:323` | An upstream channel: identifier, frequency, transmit power, channel type, symbol rate, modulation and lock status. |
+| `CMMGMT_CM_DOCSIS_INFO` | `cm_hal.h:345` | `DOCSIS`-related information for the modem: the registration progression tabulated under `State Diagram`, the config file name, attempt counters, `ToD` status, `BPI` state, network access, upgrade-server address, `CPE` allowance, upstream and downstream service-flow parameters including `QoS`, data rates and core version. |
+| `CMMGMT_CM_ERROR_CODEWORDS` | `cm_hal.h:386` | Codeword error statistics: unerrored, correctable and uncorrectable counts. |
+| `CMMGMT_CM_EventLogEntry_t` | `cm_hal.h:409-418` | One entry of the modem's event log: index, first and last timestamps, occurrence count, level, identifier and text. |
+| `CMMGMT_DML_CM_LOG` | `cm_hal.h:432` | Configuration settings for modem logging. |
+| `CMMGMT_DML_DOCSISLOG_FULL` | `cm_hal.h:449` | A single entry within a `DOCSIS` log. |
+| `CMMGMT_CM_DHCP_INFO` | `cm_hal.h:468` | The modem's `DHCP` configuration. |
+| `CMMGMT_CM_IPV6DHCP_INFO` | `cm_hal.h:487` | The modem's `IPv6` `DHCP` configuration. |
+| `CMMGMT_DML_CPE_LIST` | `cm_hal.h:503` | A single `CPE` entry. |
+| `DOCSIF31_CM_DS_OFDM_CHAN` | `cm_hal.h:513` | Parameters of a `DOCSIS 3.1` `OFDM` downstream channel. |
+| `DOCSIF31_CM_US_OFDMA_CHAN` | `cm_hal.h:551` | Parameters of a `DOCSIS 3.1` `OFDMA` upstream channel. |
+| `DOCSIF31_CMSTATUSOFDMA_US` | `cm_hal.h:574` | Status information for a `DOCSIS 3.1` `OFDMA` upstream channel, including its ranging state and whether the channel is muted. |
+| `fixed_length_buffer_t` | `cm_hal.h:602-623` | A buffer of fixed length: a `USHORT` byte count and a pointer to the data. |
+| `snmp_kickstart_row_t` | `cm_hal.h:636-650` | One row of an `SNMP` v3 kickstart configuration: a security name and a security number, each a `fixed_length_buffer_t`. |
+| `snmpv3_kickstart_table_t` | `cm_hal.h:661` | An `SNMP` v3 kickstart configuration table: a row count and up to `MAX_KICKSTART_ROWS` row pointers. |
+| `CM_DIPLEXER_SETTINGS` | `cm_hal.h:687` | Diplexer frequency settings: the upstream and downstream upper band edges in `MHz`. This is the structure the notification handler receives. |
 
 Twelve of those seventeen additionally declare a pointer alias formed by prefixing `P` to the structure name - `PCMMGMT_CM_DS_CHANNEL`, `PCMMGMT_CM_US_CHANNEL`, `PCMMGMT_CM_DOCSIS_INFO`, `PCMMGMT_CM_ERROR_CODEWORDS`, `PCMMGMT_DML_CM_LOG`, `PCMMGMT_DML_DOCSISLOG_FULL`, `PCMMGMT_CM_DHCP_INFO`, `PCMMGMT_CM_IPV6DHCP_INFO`, `PCMMGMT_DML_CPE_LIST`, `PDOCSIF31_CM_DS_OFDM_CHAN`, `PDOCSIF31_CM_US_OFDMA_CHAN` and `PDOCSIF31_CMSTATUSOFDMA_US`. Several signatures in `API Surface` are written in terms of those aliases, so a caller has to know them; the header records a coding-standard intention to retire them, so new code should prefer the structure name where it has the choice. `CMMGMT_CM_EventLogEntry_t`, `fixed_length_buffer_t`, `snmp_kickstart_row_t`, `snmpv3_kickstart_table_t` and `CM_DIPLEXER_SETTINGS` have no alias.
 
-**The callback typedef.** `cm_hal_DiplexerVariationCallback` (`cm_hal.h:1209`) is the one handler type this interface defines. It is installed by `cm_hal_Register_DiplexerVariationCallback` (`cm_hal.h:1228`), it receives a `CM_DIPLEXER_SETTINGS` structure by value, and it returns `RETURN_OK` or `RETURN_ERR`. There is no matching unregister function; `Asynchronous Notification Model` states the obligations that follow.
+**The callback typedef.** `cm_hal_DiplexerVariationCallback` (`cm_hal.h:3595`) is the one handler type this interface defines. It is installed by `cm_hal_Register_DiplexerVariationCallback` (`cm_hal.h:3664`), it receives a `CM_DIPLEXER_SETTINGS` structure by value, and it returns `RETURN_OK` or `RETURN_ERR`. There is no matching unregister function; `Asynchronous Notification Model` states the obligations that follow.
 
 ### API Surface
 
@@ -383,112 +393,136 @@ This topic is the boundary between the two ways of reading this document. Everyt
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `cm_hal_InitDB` | `cm_hal.h:482` | Initializes the `HAL` and its dependencies; may block if the hardware is not ready. |
-| `docsis_InitDS` | `cm_hal.h:494` | Initializes the downstream `PHY` layer and direct hardware access. |
-| `docsis_InitUS` | `cm_hal.h:506` | Initializes the upstream `PHY` layer and direct hardware access. |
+| `cm_hal_InitDB` | `cm_hal.h:783` | Initializes the `HAL` and its dependencies; may block if the hardware is not ready. |
+| `docsis_InitDS` | `cm_hal.h:826` | Initializes the downstream `PHY` layer and direct hardware access. |
+| `docsis_InitUS` | `cm_hal.h:864` | Initializes the upstream `PHY` layer and direct hardware access. |
 
 **Modem and DOCSIS status \- 2 functions.** The fast answer, and the detailed one behind it.
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `docsis_getCMStatus` | `cm_hal.h:547` | Retrieves and formats the modem's `DOCSIS` status into a caller-supplied buffer of at least `40` bytes; the value set is enumerated under `State Diagram`. |
-| `docsis_GetDOCSISInfo` | `cm_hal.h:605` | Retrieves the current `DOCSIS` registration status into a caller-allocated `CMMGMT_CM_DOCSIS_INFO` structure. |
+| `docsis_getCMStatus` | `cm_hal.h:958` | Retrieves and formats the modem's `DOCSIS` status into a caller-supplied buffer of at least `40` bytes; the value set is enumerated under `State Diagram`. |
+| `docsis_GetDOCSISInfo` | `cm_hal.h:1204` | Retrieves the current `DOCSIS` registration status into a caller-allocated `CMMGMT_CM_DOCSIS_INFO` structure. |
 
 **Channel information \- 5 functions.** Per-channel parameters and how many channels are in use.
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `docsis_GetDSChannel` | `cm_hal.h:562` | Retrieves downstream channel information in a structure the `HAL` allocates and the caller frees. |
-| `docsis_GetUsStatus` | `cm_hal.h:575` | Retrieves the status of one upstream channel, selected by index, into a caller-supplied structure. |
-| `docsis_GetUSChannel` | `cm_hal.h:590` | Retrieves upstream channel information in a structure the `HAL` allocates and the caller frees. |
-| `docsis_GetNumOfActiveTxChannels` | `cm_hal.h:618` | Reads how many upstream channels the current registration is using. |
-| `docsis_GetNumOfActiveRxChannels` | `cm_hal.h:631` | Reads how many downstream channels the current registration is using. |
+| `docsis_GetDSChannel` | `cm_hal.h:1028` | Retrieves downstream channel information in a structure the `HAL` allocates and the caller frees. |
+| `docsis_GetUsStatus` | `cm_hal.h:1086` | Retrieves the status of one upstream channel, selected by index, into a caller-supplied structure. |
+| `docsis_GetUSChannel` | `cm_hal.h:1146` | Retrieves upstream channel information in a structure the `HAL` allocates and the caller frees. |
+| `docsis_GetNumOfActiveTxChannels` | `cm_hal.h:1250` | Reads how many upstream channels the current registration is using. |
+| `docsis_GetNumOfActiveRxChannels` | `cm_hal.h:1296` | Reads how many downstream channels the current registration is using. |
 
 **DOCSIS 3.1 OFDM and OFDMA tables \- 3 functions.** Each allocates an array and reports its length; the caller frees it. `Optional Components` explains why the array may be empty.
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `docsis_GetDsOfdmChanTable` | `cm_hal.h:1077` | Retrieves the `DSOFDM` channel table as an allocated array of `DOCSIF31_CM_DS_OFDM_CHAN` entries. |
-| `docsis_GetUsOfdmaChanTable` | `cm_hal.h:1094` | Retrieves the `USOFDMA` channel table as an allocated array of `DOCSIF31_CM_US_OFDMA_CHAN` entries. |
-| `docsis_GetStatusOfdmaUsTable` | `cm_hal.h:1111` | Retrieves the `USOFDMA` channel status table as an allocated array of `DOCSIF31_CMSTATUSOFDMA_US` entries. |
+| `docsis_GetDsOfdmChanTable` | `cm_hal.h:3052` | Retrieves the `DSOFDM` channel table as an allocated array of `DOCSIF31_CM_DS_OFDM_CHAN` entries. |
+| `docsis_GetUsOfdmaChanTable` | `cm_hal.h:3124` | Retrieves the `USOFDMA` channel table as an allocated array of `DOCSIF31_CM_US_OFDMA_CHAN` entries. |
+| `docsis_GetStatusOfdmaUsTable` | `cm_hal.h:3195` | Retrieves the `USOFDMA` channel status table as an allocated array of `DOCSIF31_CMSTATUSOFDMA_US` entries. |
 
 **Channel and frequency control \- 4 functions.** The only pair in this interface where a setter reports nothing and its getter returns a bare value; `Internal Error Handling` and `Method Sequencing` both turn on that fact.
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `docsis_GetUSChannelId` | `cm_hal.h:690` | Returns the upstream channel identifier within its `MAC` domain as a `UINT8` value, not a status code. |
-| `docsis_SetUSChannelId` | `cm_hal.h:699` | Sets the upstream channel identifier within its `MAC` domain. Declared `void`, so it reports nothing. |
-| `docsis_GetDownFreq` | `cm_hal.h:708` | Returns the current primary downstream channel frequency as a `ULONG` value, not a status code. |
-| `docsis_SetStartFreq` | `cm_hal.h:717` | Sets the primary downstream channel frequency. Declared `void`, so it reports nothing. |
+| `docsis_GetUSChannelId` | `cm_hal.h:1543` | Returns the upstream channel identifier within its `MAC` domain as a `UINT8` value, not a status code. |
+| `docsis_SetUSChannelId` | `cm_hal.h:1585` | Sets the upstream channel identifier within its `MAC` domain. Declared `void`, so it reports nothing. |
+| `docsis_GetDownFreq` | `cm_hal.h:1623` | Returns the current primary downstream channel frequency as a `ULONG` value, not a status code. |
+| `docsis_SetStartFreq` | `cm_hal.h:1664` | Sets the primary downstream channel frequency. Declared `void`, so it reports nothing. |
 
 **Provisioning, MDD override and certificates \- 5 functions.** How the modem is provisioned with an `IP` mode, and the state of its certificate.
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `docsis_GetMddIpModeOverride` | `cm_hal.h:666` | Reads the current `IP` provisioning-mode override status. |
-| `docsis_SetMddIpModeOverride` | `cm_hal.h:681` | Sets the `IP` provisioning-mode override status. |
-| `docsis_GetProvIpType` | `cm_hal.h:966` | Reads the provisioned `IP` type for the `WAN` interface. |
-| `docsis_GetCert` | `cm_hal.h:979` | Reads the file path of the modem certificate. |
-| `docsis_GetCertStatus` | `cm_hal.h:994` | Reads the modem certificate status. |
+| `docsis_GetMddIpModeOverride` | `cm_hal.h:1447` | Reads the current `IP` provisioning-mode override status. |
+| `docsis_SetMddIpModeOverride` | `cm_hal.h:1504` | Sets the `IP` provisioning-mode override status. |
+| `docsis_GetProvIpType` | `cm_hal.h:2647` | Reads the provisioned `IP` type for the `WAN` interface. |
+| `docsis_GetCert` | `cm_hal.h:2706` | Reads the file path of the modem certificate. |
+| `docsis_GetCertStatus` | `cm_hal.h:2749` | Reads the modem certificate status. |
 
 **Diagnostics: error codewords and event log \- 3 functions.**
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `docsis_GetErrorCodewords` | `cm_hal.h:646` | Scans the active downstream channels and reports packet errors into a caller-allocated structure. |
-| `docsis_GetDocsisEventLogItems` | `cm_hal.h:729` | Fills a caller-supplied array with up to a given number of event-log entries and **returns the number of entries retrieved**, not a status code. |
-| `docsis_ClearDocsisEventLog` | `cm_hal.h:742` | Clears the event log asynchronously. The header requires this function not to block or use blocking system calls. |
+| `docsis_GetErrorCodewords` | `cm_hal.h:1386` | Scans the active downstream channels and reports packet errors into a caller-allocated structure. |
+| `docsis_GetDocsisEventLogItems` | `cm_hal.h:1723` | Fills a caller-supplied array with up to a given number of event-log entries and **returns the number of entries retrieved**, not a status code. |
+| `docsis_ClearDocsisEventLog` | `cm_hal.h:1768` | Clears the event log asynchronously. The header requires this function not to block or use blocking system calls. |
 
 **DHCP, CPE and market information \- 4 functions.** All read-only; see the addressing bullet under `Description`.
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `cm_hal_GetDHCPInfo` | `cm_hal.h:757` | Reads the modem's `DHCP` information into a structure the caller allocates and frees. |
-| `cm_hal_GetIPv6DHCPInfo` | `cm_hal.h:772` | Reads the modem's `IPv6` `DHCP` information into a structure the caller allocates and frees. |
-| `cm_hal_GetCPEList` | `cm_hal.h:791` | Reads the list of connected `CPE` devices and their count; the caller allocates and frees both the list and the mode string, which is `router` or `bridge` and at most `100` bytes. |
-| `cm_hal_GetMarket` | `cm_hal.h:804` | Reads the modem's market region, for example `EURO` for Europe or `US` for the United States. |
+| `cm_hal_GetDHCPInfo` | `cm_hal.h:1825` | Reads the modem's `DHCP` information into a structure the caller allocates and frees. |
+| `cm_hal_GetIPv6DHCPInfo` | `cm_hal.h:1877` | Reads the modem's `IPv6` `DHCP` information into a structure the caller allocates and frees. |
+| `cm_hal_GetCPEList` | `cm_hal.h:1964` | Reads the list of connected `CPE` devices and their count; the caller allocates and frees both the list and the mode string, which is `router` or `bridge` and at most `100` bytes. |
+| `cm_hal_GetMarket` | `cm_hal.h:2023` | Reads the modem's market region, for example `EURO` for Europe or `US` for the United States. |
 
 **HTTP firmware download \- 8 functions.** A configure-then-start-then-poll sequence rather than one call, as `Method Sequencing` describes.
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `cm_hal_Set_HTTP_Download_Url` | `cm_hal.h:822` | Configures the download `URL` and image filename. Both buffers must be at least `200` bytes. |
-| `cm_hal_Get_HTTP_Download_Url` | `cm_hal.h:838` | Reads back the configured download `URL` and filename, under the same buffer requirement. |
-| `cm_hal_Set_HTTP_Download_Interface` | `cm_hal.h:853` | Selects the interface the download is to use. |
-| `cm_hal_Get_HTTP_Download_Interface` | `cm_hal.h:868` | Reads back the interface the download is configured to use. |
-| `cm_hal_HTTP_Download` | `cm_hal.h:879` | Initiates the download. |
-| `cm_hal_Get_HTTP_Download_Status` | `cm_hal.h:897` | Reads the current download status; this is the interface's progress mechanism, in place of a notification. |
-| `cm_hal_HTTP_Download_Reboot_Now` | `cm_hal.h:926` | Initiates a reboot, performing pre-reboot checks and updates. |
-| `cm_hal_HTTP_LED_Flash` | `cm_hal.h:1060` | Controls flashing of the `HTTP` `LED` indicator. |
+| `cm_hal_Set_HTTP_Download_Url` | `cm_hal.h:2108` | Configures the download `URL` and image filename. Both buffers must be at least `200` bytes. |
+| `cm_hal_Get_HTTP_Download_Url` | `cm_hal.h:2162` | Reads back the configured download `URL` and filename, under the same buffer requirement. |
+| `cm_hal_Set_HTTP_Download_Interface` | `cm_hal.h:2213` | Selects the interface the download is to use. |
+| `cm_hal_Get_HTTP_Download_Interface` | `cm_hal.h:2256` | Reads back the interface the download is configured to use. |
+| `cm_hal_HTTP_Download` | `cm_hal.h:2308` | Initiates the download. |
+| `cm_hal_Get_HTTP_Download_Status` | `cm_hal.h:2378` | Reads the current download status; this is the interface's progress mechanism, in place of a notification. |
+| `cm_hal_HTTP_Download_Reboot_Now` | `cm_hal.h:2476` | Initiates a reboot, performing pre-reboot checks and updates. |
+| `cm_hal_HTTP_LED_Flash` | `cm_hal.h:2980` | Controls flashing of the `HTTP` `LED` indicator. |
 
-**Reboot, factory reset and MAC re-initialization \- 5 functions.** The recovery operations, and the threshold that governs the automatic one.
+**Firmware download safety: this interface validates nothing, so the whole obligation is the caller's and the vendor's.** Two of the declarations above take a location for an executable image \- `cm_hal_Set_HTTP_Download_Url` (`cm_hal.h:2108`), which records it, and `cm_hal_FWupdateAndFactoryReset` (`cm_hal.h:2547`), which takes it directly \- and neither the interface nor this specification places a single check between the value a caller supplies and the firmware the device runs. `include/cm_hal.h` declares no validation function, no origin allowlist, no scheme restriction, no length argument, no normalization step and no signature-verification call, and the `RETURN_ERR` that `cm_hal_Set_HTTP_Download_Url` documents for an "invalid URL" does not distinguish a value rejected for safety from a download already in progress. An implementation that fetches whatever location it is handed, and applies whatever it retrieves, makes an unvalidated `URL` a server-side request forgery and remote code-download primitive: the value decides both what the device contacts from inside the operator network and what firmware it subsequently runs.
+
+The requirements below are therefore normative on the two parties that can honour them. **They are stated as obligations on the RDK-B caller and on the vendor implementation, and none of them describes behaviour this interface performs.**
+
+**The caller, before it passes either argument:**
+
+- **Trusted origin, over `HTTPS`.** The `URL` must name an operator-controlled firmware distribution endpoint taken from the device's own provisioned configuration and must use the `https` scheme. A location arriving from any source the caller does not itself trust \- an unauthenticated remote request, an unauthorized management parameter, a value read back from another device \- must not be passed. Compare against a configured allowlist of scheme, host and port; a substring or prefix test is not a comparison, because a trusted host name appearing somewhere inside a `URL` does not make the `URL` trusted.
+- **Reject userinfo outright.** A `URL` carrying a `user:password@` component is rejected, not repaired. It hands a credential to the vendor implementation and to every diagnostic the transfer touches, and it moves the authority for the fetch outside the operator's control. Where such a value is seen it falls under the credential rules in `Logging and debugging requirements` and is not logged.
+- **Reject control characters and embedded line breaks.** Both arguments must be validated as printable, single-line, zero-terminated values. A carriage return or line feed in a value an implementation later writes into a request line or into the download configuration file splits that line and lets a second directive be injected behind the first.
+- **Treat the image name as a name, not a path.** Reject any path separator, absolute path, scheme or drive prefix, `..` segment, bare `.` and empty value, in their literal form and in any percent-encoded or otherwise escaped form. That argument decides where the retrieved image is stored, so a traversal sequence in it writes outside the directory the implementation intended.
+- **Normalize before deciding, then use the normalized value.** Percent-decode once, reject anything that still decodes to a separator or a control character, resolve `.` and `..` segments, collapse repeated separators \- and only then compare against the allowlist and pass the result. Validating the raw value while using the decoded one, or the reverse, is how an encoded traversal or an encoded host passes a check it should have failed.
+- **Bound the length.** Keep the `URL` and the image name within `200` bytes including the terminator, which is what `cm_hal_Get_HTTP_Download_Url` requires of the buffers it writes back into. This interface states no maximum and offers no length argument, so nothing below the caller can detect an oversized value.
+
+**The vendor implementation, behind those declarations:**
+
+- **Re-validate; do not rely on the caller.** Apply every rule above again on entry and report a value that fails any of them as `RETURN_ERR` rather than sanitizing it and proceeding.
+- **Authenticate the transport.** Fetch over `TLS` with full certificate-chain and host-name verification against the device's trust store. Do not accept a plaintext `http` origin, do not follow a redirect that downgrades the scheme or leaves the allowlisted origin, and do not relax verification for an expired, self-signed or mismatched certificate.
+- **Verify the image before applying it.** The retrieved image's signature must be checked against a key the device already trusts, and an image that fails verification must be discarded without being written to a boot bank, unpacked or executed. `cm_hal_Get_HTTP_Download_Status` (`cm_hal.h:2378`) is the only place this interface acknowledges image protection at all: it defines status values `403` to `407` for hardware-type, hardware-mask, revision, header and code-verification-certificate protection failures. Defining a code for a failed check is not the same as requiring the check or specifying its strength, and this interface does neither.
+- **Do not disclose the location.** Neither the configured `URL` nor the image name is written to a log, a crash artefact or a telemetry record at any severity where it carries a credential; the rules under `Logging and debugging requirements` apply unchanged.
+
+**`cm_hal_FWupdateAndFactoryReset` is the sharper of the two cases,** and a caller should treat it accordingly. It takes the location as an argument rather than recording a configuration that could be read back with `cm_hal_Get_HTTP_Download_Url`, so there is no review step. It exposes no progress or protection status: the poll above is documented against `cm_hal_HTTP_Download`, and this interface states no equivalent for this path, so the `403` to `407` protection codes have no counterpart here and a caller cannot learn that verification failed. And it is terminal and destructive \- it restarts the device and discards its configuration \- so a wrongly authorized image lands on a device that has just lost the configuration a caller might have used to recover it. Validate before the call; there is nothing to inspect after it.
+
+**What a reader must not take from this section.** None of it is enforced. `include/cm_hal.h` provides no way for a caller to ask an implementation whether it performs any of these checks, and no status that reports one having failed for a reason other than the five protection codes above. An integrator establishes that a vendor implementation observes these requirements by inspection or by contract, and must not infer it from a successful return.
+
+**Reboot, factory reset and MAC re-initialization \- 5 functions.** The recovery operations, and the threshold that governs the automatic one. `cm_hal_FWupdateAndFactoryReset` takes a firmware location, so the firmware download safety requirements stated above the previous table bind it as well, and bind it more tightly.
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `cm_hal_Reboot_Ready` | `cm_hal.h:912` | Reports whether the system is ready for a reboot. |
-| `cm_hal_FWupdateAndFactoryReset` | `cm_hal.h:940` | Initiates a firmware update from a given `URL` and image name, followed by a factory reset. |
-| `cm_hal_ReinitMac` | `cm_hal.h:951` | Resets the modem's `MAC` layer while preserving its channels. |
-| `cm_hal_set_ReinitMacThreshold` | `cm_hal.h:1168` | Sets the threshold at which `MAC`-layer re-initialization is triggered. |
-| `cm_hal_get_ReinitMacThreshold` | `cm_hal.h:1181` | Reads the `MAC`-layer re-initialization threshold. |
+| `cm_hal_Reboot_Ready` | `cm_hal.h:2425` | Reports whether the system is ready for a reboot. |
+| `cm_hal_FWupdateAndFactoryReset` | `cm_hal.h:2547` | Initiates a firmware update from a given `URL` and image name, followed by a factory reset. |
+| `cm_hal_ReinitMac` | `cm_hal.h:2596` | Resets the modem's `MAC` layer while preserving its channels. |
+| `cm_hal_set_ReinitMacThreshold` | `cm_hal.h:3438` | Sets the threshold at which `MAC`-layer re-initialization is triggered. |
+| `cm_hal_get_ReinitMacThreshold` | `cm_hal.h:3484` | Reads the `MAC`-layer re-initialization threshold. |
 
 **Reset counters \- 4 functions.** Four separately maintained counters; the interface declares no way to clear them.
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `cm_hal_Get_CableModemResetCount` | `cm_hal.h:1007` | Reads how many times the modem has been reset. |
-| `cm_hal_Get_LocalResetCount` | `cm_hal.h:1020` | Reads how many of those resets were local. |
-| `cm_hal_Get_DocsisResetCount` | `cm_hal.h:1033` | Reads how many were `DOCSIS`-related. |
-| `cm_hal_Get_ErouterResetCount` | `cm_hal.h:1046` | Reads how many times the eRouter has been reset. |
+| `cm_hal_Get_CableModemResetCount` | `cm_hal.h:2795` | Reads how many times the modem has been reset. |
+| `cm_hal_Get_LocalResetCount` | `cm_hal.h:2841` | Reads how many of those resets were local. |
+| `cm_hal_Get_DocsisResetCount` | `cm_hal.h:2888` | Reads how many were `DOCSIS`-related. |
+| `cm_hal_Get_ErouterResetCount` | `cm_hal.h:2934` | Reads how many times the eRouter has been reset. |
 
 **Security, energy detection and diplexer \- 5 functions.** Includes the interface's only notification registration.
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `cm_hal_snmpv3_kickstart_initialize` | `cm_hal.h:1140` | Initializes `SNMP` v3 security parameters from a kickstart table. |
-| `docsis_IsEnergyDetected` | `cm_hal.h:1155` | Reports whether `DOCSIS` energy is present, which is how a caller decides whether the `WAN` is connected. |
-| `docsis_LLDgetEnableStatus` | `cm_hal.h:1127` | Reports whether Low Latency `DOCSIS` is enabled, returning `ENABLE`, `DISABLE` or `RETURN_ERR`. |
-| `cm_hal_get_DiplexerSettings` | `cm_hal.h:1196` | Reads the current diplexer band-edge settings. |
-| `cm_hal_Register_DiplexerVariationCallback` | `cm_hal.h:1228` | Registers the handler invoked when the diplexer settings change. The registration cannot be undone, and `RETURN_ERR` may mean the platform does not implement the facility. |
+| `cm_hal_snmpv3_kickstart_initialize` | `cm_hal.h:3339` | Initializes `SNMP` v3 security parameters from a kickstart table. |
+| `docsis_IsEnergyDetected` | `cm_hal.h:3387` | Reports whether `DOCSIS` energy is present, which is how a caller decides whether the `WAN` is connected. |
+| `docsis_LLDgetEnableStatus` | `cm_hal.h:3256` | Reports whether Low Latency `DOCSIS` is enabled, returning `ENABLE`, `DISABLE` or `RETURN_ERR`. |
+| `cm_hal_get_DiplexerSettings` | `cm_hal.h:3535` | Reads the current diplexer band-edge settings. |
+| `cm_hal_Register_DiplexerVariationCallback` | `cm_hal.h:3664` | Registers the handler invoked when the diplexer settings change. The registration cannot be undone, and `RETURN_ERR` may mean the platform does not implement the facility. |
 
 The twelve groups hold `3`, `2`, `5`, `3`, `4`, `5`, `3`, `4`, `8`, `5`, `4` and `5` functions, which is `51` in total - every function the header declares, each named once. The callback type the last group registers is described under `Data Structures and Defines`.
 
@@ -588,48 +622,101 @@ This is one path, not the whole interface. The declarations it does not walk - `
 
 ### State Diagram
 
-Two state vocabularies exist here and they are not the same thing. The interface's **own** lifecycle is short and is established by this specification: uninitialized, initialized, then operational. The **modem's** state is longer, is reported rather than driven, and is established by `include/cm_hal.h`, which enumerates on the declaration of `docsis_getCMStatus` (`cm_hal.h:547`) every value that function can return. The diagram draws the bring-up path those values name, in the order the header lists them.
+Two state vocabularies exist here and they are not the same thing. The interface's **own** lifecycle is short and *is* established by `include/cm_hal.h`, which chains the three initializers by pre-condition and post-condition. The **modem's** `DOCSIS` status is longer, is reported rather than driven, and is **not** a state machine: the declaration of `docsis_getCMStatus` states that "this interface reports these values but does not specify which transitions between them are legal or in what order they occur, so a caller must not infer a state machine from the list" (`cm_hal.h:942-944`). This topic therefore draws the first and tabulates the second.
+
+**The `HAL` lifecycle, which the interface does establish.** Each edge below is a documented pre-condition or post-condition, not an inference: `cm_hal_InitDB` is a pre-condition of every other operation and no other function may be called before it returns `RETURN_OK` (`cm_hal.h:194-709`), on success `docsis_InitDS` may be called (`cm_hal.h:826`), `docsis_InitDS` requires `cm_hal_InitDB` to have returned `RETURN_OK` (`cm_hal.h:194`), and `docsis_InitUS` requires both and on success leaves every other function callable (`cm_hal.h:828-864`).
 
 ```mermaid
 stateDiagram-v2
     [*] --> Uninitialized
-    Uninitialized --> Initialized: cm_hal_InitDB()
-    Initialized --> PhyInitialized: docsis_InitDS() then docsis_InitUS()
-    PhyInitialized --> NOT_READY: modem bring-up begins
-    NOT_READY --> NOT_SYNCHRONIZED
-    NOT_SYNCHRONIZED --> PHY_SYNCHRONIZED
-    PHY_SYNCHRONIZED --> US_PARAMETERS_ACQUIRED
-    US_PARAMETERS_ACQUIRED --> RANGING_COMPLETE
-    RANGING_COMPLETE --> DHCPV4_COMPLETE
-    DHCPV4_COMPLETE --> TOD_ESTABLISHED
-    TOD_ESTABLISHED --> SECURITY_ESTABLISHED
-    SECURITY_ESTABLISHED --> CONFIG_FILE_DOWNLOAD_COMPLETE
-    CONFIG_FILE_DOWNLOAD_COMPLETE --> REGISTRATION_COMPLETE
-    REGISTRATION_COMPLETE --> OPERATIONAL
-    OPERATIONAL --> Initialized: cm_hal_ReinitMac()
-    OPERATIONAL --> Uninitialized: cm_hal_HTTP_Download_Reboot_Now()
-    OPERATIONAL --> Uninitialized: cm_hal_FWupdateAndFactoryReset()
+    Uninitialized --> DbInitialized : cm_hal_InitDB() returns RETURN_OK
+    DbInitialized --> DsInitialized : docsis_InitDS() returns RETURN_OK
+    DsInitialized --> FullyInitialized : docsis_InitUS() returns RETURN_OK
+    FullyInitialized --> [*] : cm_hal_HTTP_Download_Reboot_Now() or cm_hal_FWupdateAndFactoryReset() - the device restarts
 ```
 
-**What the diagram asserts, and what it deliberately does not.** The three transitions out of `OPERATIONAL` are the only ones a caller can drive, and each is a declared function. The path from `NOT_READY` to `REGISTRATION_COMPLETE` is the sequence of values the header lists for `docsis_getCMStatus`, which is the order in which a modem synchronises with the `CMTS`, acquires an address, establishes time of day and security, downloads its configuration file and registers. **The interface does not state which transitions between those values are legal**, does not state a timeout for any phase, and does not state a retry limit; the only retry evidence it exposes is two counters in `CMMGMT_CM_DOCSIS_INFO`, for `DHCP` and `TFTP` attempts. A caller must therefore poll and interpret, not predict.
+Three things about that diagram are stated by the interface and worth reading off it. There is no edge back to `Uninitialized` within one process, because **this interface declares no de-initialization counterpart** (`cm_hal.h:749-751`). A failed initializer does not move the state and does not leave a defined one either: each of the three records that the interface does not define whether it left things partly initialized, so a caller treats the `HAL` as unusable rather than retrying from a known point (`cm_hal.h:757-761`, `:797-801`, `:839-841`). And the two terminal edges are terminal in the strongest sense - both calls restart the device, and a caller must not rely on any code after them executing (`cm_hal.h:2445-2448`, `:2505-2508`).
 
-Nine further values `docsis_getCMStatus` can return are not drawn as states, because the interface establishes no edge that reaches them:
+**`cm_hal_ReinitMac` is deliberately not drawn as a transition.** It resets the modem's `MAC` layer while preserving the downstream and upstream channels (`cm_hal.h:2549-2596`); it does not de-initialize the `HAL`, so it moves no state on the diagram above. Nor does it establish a destination in the modem's vocabulary: its post-condition states that **this interface states no point at which the modem is usable again and provides no readiness notification, so a caller polls `docsis_getCMStatus`** (`cm_hal.h:958-1864`), and on failure the `MAC` layer's state is explicitly unknown - the same post-condition records that the interface does not state whether the `MAC` layer was left running or part-way through a reset (`cm_hal.h:958-1866`). An edge would have to name a state the interface refuses to name.
 
-| Value | What it reports |
-| --- | --- |
-| `RANGING_IN_PROGRESS`, `DHCPV4_IN_PROGRESS`, `DHCPV6_IN_PROGRESS`, `REGISTRATION_IN_PROGRESS`, `EAE_IN_PROGRESS`, `DS_TOPOLOGY_RESOLUTION_IN_PROGRESS`, `BPI_INIT` | A phase under way rather than complete. Each pairs with a completion value in the diagram above, except the last two, which report early authentication and `BPI` initialization. |
-| `DHCPV6_COMPLETE` | The `IPv6` counterpart of `DHCPV4_COMPLETE`. Which of the two a modem reaches depends on its provisioning mode, which `docsis_GetProvIpType` reads. |
-| `ACCESS_DENIED`, `FORWARDING_DISABLED`, `RF_MUTE_ALL` | A condition that stops progress: the modem was refused, forwarding is off, or the upstream transmitter is muted. |
-| `OTHER`, `Unsupported status` | The implementation could not map the modem's state onto the values above. |
+**The modem's `DOCSIS` status is a value set, and no edges are drawn over it.** `docsis_getCMStatus` reports one of twenty-four zero-terminated strings, listed on its declaration at `cm_hal.h:866-958`. The declaration lists them without defining them individually, so the reading in the third column below is what each spelling names and nothing more; a caller that needs the phase itself defined takes that from the `DOCSIS` specification the modem implements, not from this interface. The interface defines no enumeration for these values, so a caller compares the buffer against these spellings exactly and **must tolerate a value it does not recognise rather than assume the set is closed** (`cm_hal.h:866-958`).
 
-The same progression is readable field by field from `CMMGMT_CM_DOCSIS_INFO` (`cm_hal.h:202`), which `docsis_GetDOCSISInfo` fills. Each field carries its own ordered value set, and the correspondence with the status values above is by phase name only - the header states no mapping between the two.
+| Value | Group | What its spelling names |
+| --- | --- | --- |
+| `NOT_READY` | Bring-up | The modem is not yet ready. |
+| `NOT_SYNCHRONIZED` | Bring-up | Downstream synchronisation has not been achieved. |
+| `PHY_SYNCHRONIZED` | Bring-up | `PHY`-level synchronisation has been achieved. |
+| `US_PARAMETERS_ACQUIRED` | Bring-up | The upstream parameters have been acquired. |
+| `RANGING_COMPLETE` | Bring-up | Ranging has completed. |
+| `DHCPV4_COMPLETE` | Bring-up | `DHCPv4` address acquisition has completed. |
+| `DHCPV6_COMPLETE` | Bring-up | `DHCPv6` address acquisition has completed. Which of the two a modem reports depends on its provisioning mode, which `docsis_GetProvIpType` reads. |
+| `TOD_ESTABLISHED` | Bring-up | Time of day has been established. |
+| `SECURITY_ESTABLISHED` | Bring-up | Link-layer security has been established. |
+| `CONFIG_FILE_DOWNLOAD_COMPLETE` | Bring-up | The configuration file has been downloaded. |
+| `REGISTRATION_COMPLETE` | Bring-up | Registration has completed. |
+| `OPERATIONAL` | Bring-up | The modem is operational. |
+| `RANGING_IN_PROGRESS`, `DHCPV4_IN_PROGRESS`, `DHCPV6_IN_PROGRESS`, `REGISTRATION_IN_PROGRESS`, `EAE_IN_PROGRESS`, `DS_TOPOLOGY_RESOLUTION_IN_PROGRESS` | In progress | The named phase is under way rather than complete. Four of the six pair with a completion value above; early authentication and downstream topology resolution have no completion value in the set. |
+| `BPI_INIT` | In progress | Baseline privacy initialization. |
+| `ACCESS_DENIED` | Condition | Access was denied. |
+| `FORWARDING_DISABLED` | Condition | Forwarding is disabled. |
+| `RF_MUTE_ALL` | Condition | All `RF` transmission is muted. |
+| `OTHER` | Not mapped | A state the implementation reports as none of the above. |
+| `Unsupported status` | Not mapped | What an implementation reports for a state it cannot map onto the others (`cm_hal.h:915-917`). |
+
+The same twenty-four values, grouped by what their spellings name and **drawn without transitions, because the interface specifies none**:
+
+```mermaid
+flowchart LR
+    subgraph phase["Spelling names a completed bring-up phase"]
+        direction LR
+        p0["NOT_READY"]
+        p1["NOT_SYNCHRONIZED"]
+        p2["PHY_SYNCHRONIZED"]
+        p3["US_PARAMETERS_ACQUIRED"]
+        p4["RANGING_COMPLETE"]
+        p5["DHCPV4_COMPLETE"]
+        p6["DHCPV6_COMPLETE"]
+        p7["TOD_ESTABLISHED"]
+        p8["SECURITY_ESTABLISHED"]
+        p9["CONFIG_FILE_DOWNLOAD_COMPLETE"]
+        p10["REGISTRATION_COMPLETE"]
+        p11["OPERATIONAL"]
+    end
+    subgraph prog["Spelling names a phase under way"]
+        direction LR
+        q0["RANGING_IN_PROGRESS"]
+        q1["DHCPV4_IN_PROGRESS"]
+        q2["DHCPV6_IN_PROGRESS"]
+        q3["REGISTRATION_IN_PROGRESS"]
+        q4["EAE_IN_PROGRESS"]
+        q5["DS_TOPOLOGY_RESOLUTION_IN_PROGRESS"]
+        q6["BPI_INIT"]
+    end
+    subgraph cond["Spelling names a condition, not a phase"]
+        direction LR
+        c0["ACCESS_DENIED"]
+        c1["FORWARDING_DISABLED"]
+        c2["RF_MUTE_ALL"]
+    end
+    subgraph unm["Not mapped"]
+        direction LR
+        u0["OTHER"]
+        u1["Unsupported status"]
+    end
+```
+
+**Why no edge is drawn, and what was removed.** The previous revision of this page drew a linear chain from `NOT_READY` through to `OPERATIONAL`, and three edges out of `OPERATIONAL` for `cm_hal_ReinitMac`, `cm_hal_HTTP_Download_Reboot_Now` and `cm_hal_FWupdateAndFactoryReset`. **Those edges were inferred from the order in which the declaration happens to list the values, and that order is a list order rather than a sequence** - it opens with `"Unsupported status"` and `"OTHER"`, places `ACCESS_DENIED` between `OPERATIONAL` and `EAE_IN_PROGRESS`, and puts `DHCPV6_COMPLETE` after three `IN_PROGRESS` values (`cm_hal.h:918-941`). The interface's own words are that it states no transition model over these values (`cm_hal.h:848-849`), so the chain has been removed. Nothing else in the header supplies one: no declaration drives a status change, no callback reports one - this interface publishes no notification mechanism at all - and no parameter reports a pending transition.
+
+**What a caller may rely on, and what it must not.** A caller may rely on the buffer holding one value at a time, and on the interface not closing the set. It must not treat a value as reachable only from a particular predecessor, must not assume it will observe every value - nothing states a dwell time, so two successive reads may skip one or several - and must not build a local progression model that a missing value would break. Nothing bounds any phase: the interface states no timeout for a phase and no retry limit, and the only retry evidence it exposes is the two attempt counters in `CMMGMT_CM_DOCSIS_INFO`, for `DHCP` and `TFTP`. On failure `docsis_getCMStatus` leaves the buffer's contents undefined and the modem's status **unknown rather than `NOT_READY`** (`cm_hal.h:866-958`, `:866-958`). A caller polls and interprets; it does not predict.
+
+The same progress is readable field by field from `CMMGMT_CM_DOCSIS_INFO` (`cm_hal.h:345`), which `docsis_GetDOCSISInfo` fills. Each field takes one of the values named below, and **this interface states no transition model over them either**; the correspondence with the status values above is by phase name only, since the header states no mapping between the two.
 
 | Field | Values it takes | Reports |
 | --- | --- | --- |
 | `DOCSISDownstreamScanning`, `DOCSISDownstreamRanging`, `DOCSISUpstreamScanning`, `DOCSISUpstreamRanging` | `NotStarted`, `InProgress`, `Complete` | Each of the four `PHY`-level bring-up phases, downstream then upstream. |
 | `DOCSISTftpStatus` | `NotStarted`, `InProgress`, `DownloadComplete` | The configuration-file download; the file name lands in `DOCSISConfigFileName`. |
-| `DOCSISDataRegComplete` | `InProgress`, `RegistrationComplete` | Data registration, the last phase before the modem is operational. |
+| `DOCSISDataRegComplete` | `InProgress`, `RegistrationComplete` | Data registration, the last phase named before the modem is operational. |
 | `ToDStatus` | `NotStarted`, `Complete` | Time-of-day synchronisation. |
 | `DOCSISDHCPAttempts`, `DOCSISTftpAttempts` | A count | How many attempts address acquisition and configuration download have taken. These are the only retry evidence the interface exposes. |
 
-Two fields of that structure are **not** states and must not be read as a progression: `BPIState` and `NetworkAccess` are `BOOLEAN`, so they annotate whichever state the modem is in - whether link-layer privacy is established, and whether network access is permitted - rather than sitting in a sequence. A caller reads them alongside the status value, not instead of it.
+Two fields of that structure are **not** states and must not be read as a progression: `BPIState` and `NetworkAccess` are `BOOLEAN`, so they annotate whichever value the modem currently reports - whether link-layer privacy is established, and whether network access is permitted - rather than sitting in a sequence. A caller reads them alongside the status value, not instead of it.
