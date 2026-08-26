@@ -264,11 +264,11 @@ extern "C"{
  *
  * Seventeen structures are declared, twelve of which also declare a pointer alias
  * formed by prefixing `P` to the structure name - `PCMMGMT_CM_DS_CHANNEL` and its
- * siblings. The alias and the structure name denote the same type, and several
- * prototypes are written with the alias, so a caller has to know both. This header
- * records a coding-standard intention to retire the aliases, which is why new code
- * should prefer the structure name where it has the choice; `Data Structures and
- * Defines` (docs/pages/halSpec.md) tabulates every one of them with its location.
+ * siblings. The alias and the structure name denote the same public type, and several
+ * prototypes are written with the alias, so a caller has to know both. Neither
+ * spelling is marked deprecated in this header, so either may be used where a
+ * prototype leaves the choice; `Data Structures and Defines`
+ * (docs/pages/halSpec.md) tabulates every one of them with its location.
  *
  * Which side allocates a structure is decided per prototype, not per type, and it is
  * not uniform: most getters populate storage the caller owns, while five hand back
@@ -307,9 +307,8 @@ typedef struct _CMMGMT_CM_DS_CHANNEL {
 /*
  * Both channel structures above and below also declare a pointer alias -
  * `PCMMGMT_CM_DS_CHANNEL` and `PCMMGMT_CM_US_CHANNEL` - which is the form the
- * prototypes use. This header records a coding-standard intention to retire those
- * aliases and to rename the structure tags to lower case; until that happens both
- * spellings denote the same type, and a caller may use either.
+ * prototypes use. Each alias and its structure name denote the same public type,
+ * neither spelling is marked deprecated in this header, and a caller may use either.
  */
 
  /**
@@ -322,7 +321,7 @@ typedef struct _CMMGMT_CM_DS_CHANNEL {
   */
 typedef struct _CMMGMT_CM_US_CHANNEL {
     ULONG ChannelID;      /*!< Unique channel identifier. */
-    CHAR Frequency[64];   /*!< Upstream frequency as text in a 64-byte field, not a number. Unit not stated; band 5 - 204 MHz. Example: "12750". */ 
+    CHAR Frequency[64];   /*!< Upstream frequency as text in a 64-byte field, not a number. Unit not stated; band 5 - 204 MHz. Example: "12750". */
     CHAR PowerLevel[64];  /*!< Transmit power level (45 - 61 dBmV). Example: "60". */
     CHAR ChannelType[64]; /*!< Channel type (e.g., "ATDMA", "SCDMA", "OFDMA"). */
     CHAR SymbolRate[64];  /*!< Symbol rate (symbols/second, varies with configuration). */
@@ -369,8 +368,7 @@ typedef struct _CMMGMT_CM_DOCSIS_INFO {
 /*
  * The structure below also declares the pointer alias `PCMMGMT_CM_ERROR_CODEWORDS`,
  * which is the form docsis_GetErrorCodewords() is declared with. Both spellings
- * denote the same type; this header records a coding-standard intention to retire the
- * alias and to correct the tag's capitalisation.
+ * denote the same public type, and neither is marked deprecated in this header.
  */
 
  /**
@@ -419,11 +417,10 @@ typedef struct {
 
 /*
  * The structure below also declares the pointer alias `PCMMGMT_DML_CM_LOG`. Both
- * spellings denote the same type; this header records a coding-standard intention to
- * retire the alias and to correct the tag's capitalisation. No prototype in this
- * header takes either form: the type is declared for callers that model the logging
- * controls it describes, and the log-clearing operation itself is
- * docsis_ClearDocsisEventLog().
+ * spellings denote the same public type, and neither is marked deprecated in this
+ * header. No prototype in this header takes either form: the type is declared for
+ * callers that model the logging controls it describes, and the log-clearing
+ * operation itself is docsis_ClearDocsisEventLog().
  */
 
  /**
@@ -437,9 +434,9 @@ typedef struct _CMMGMT_DML_CM_LOG {
 
 /*
  * The structure below also declares the pointer alias `PCMMGMT_DML_DOCSISLOG_FULL`,
- * with the same coding-standard intention recorded for it as for the aliases above.
- * No prototype in this header takes either form; the event log a caller can actually
- * read is delivered as CMMGMT_CM_EventLogEntry_t records by
+ * which denotes the same public type as the structure name, as with the aliases
+ * above. No prototype in this header takes either form; the event log a caller can
+ * actually read is delivered as CMMGMT_CM_EventLogEntry_t records by
  * docsis_GetDocsisEventLogItems().
  */
 
@@ -939,11 +936,12 @@ INT docsis_InitUS(void);
  *       - "DS_TOPOLOGY_RESOLUTION_IN_PROGRESS"
  *       - "RANGING_IN_PROGRESS"
  *       - "RF_MUTE_ALL"
- * @note This interface reports these values but does not specify which transitions
- *       between them are legal or in what order they occur, so a caller must not
- *       infer a state machine from the list. `State Diagram`
- *       (docs/pages/halSpec.md) therefore groups these values by what their
- *       spellings name and draws them without transitions.
+ * @note This interface reports these values but specifies neither which transitions
+ *       between them are legal nor in what order they occur, so a caller must not
+ *       infer a state machine from the list, must not wait for one value on the
+ *       strength of having seen another, and reads each value only as the condition
+ *       reported at the moment of the call. `State Diagram`
+ *       (docs/pages/halSpec.md) records the same limitation for this interface.
  * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
@@ -1001,19 +999,19 @@ INT docsis_getCMStatus(CHAR *cm_status);
  *         wrongly typed argument is a call-site defect that retrying cannot fix.
  *
  * @note Allocation and ownership. This is one of the five calls in this interface
- *       that hand back memory the caller must release. This block has always stated
- *       that "the caller is responsible for freeing the dynamically allocated memory
- *       of the returned structure", and `Memory Model` -> `Caller Responsibilities`
- *       (docs/pages/halSpec.md) names docsis_GetDSChannel() among them, recording
- *       that failing to free the result is a leak in the caller rather than in the
- *       HAL. Two parts of that contract this interface does not establish, and a
- *       caller must not guess at either: it names neither the allocator that
- *       produced the storage nor the release function that matches it, so the
- *       pairing has to be agreed with the vendor implementation; and it does not say
- *       whether `*ppinfo` is written on failure, so a caller cannot tell an
- *       untouched pointer from an allocated one after RETURN_ERR and a leak on that
- *       path cannot be ruled out from the interface alone. Initialising `*ppinfo` to
- *       NULL before the call is what makes the difference observable at all.
+ *       that hand back memory the caller must release: the caller is responsible for
+ *       freeing the dynamically allocated memory of the returned structure, and
+ *       `Memory Model` -> `Caller Responsibilities` (docs/pages/halSpec.md) names
+ *       docsis_GetDSChannel() among them, recording that failing to free the result
+ *       is a leak in the caller rather than in the HAL. Two parts of that contract
+ *       this interface does not establish, and a caller must not guess at either: it
+ *       names neither the allocator that produced the storage nor the release
+ *       function that matches it, so the pairing has to be agreed with the vendor
+ *       implementation; and it does not say whether `*ppinfo` is written on failure,
+ *       so a caller cannot tell an untouched pointer from an allocated one after
+ *       RETURN_ERR and a leak on that path cannot be ruled out from the interface
+ *       alone. Initialising `*ppinfo` to NULL before the call is what makes the
+ *       difference observable at all.
  * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
@@ -1345,9 +1343,9 @@ INT docsis_GetNumOfActiveRxChannels(ULONG *cnt);
  *       `PCMMGMT_CM_ERROR_CODEWORDS *`, the same pointer-to-pointer shape this
  *       header uses for docsis_GetDSChannel() and docsis_GetUSChannel(), where the
  *       implementation allocates the record and the caller releases it. This call is
- *       the opposite case, and the interface states so twice: this block has always
- *       stated that the caller must provide a pre-allocated structure and that the
- *       function does *not* manage memory allocation for it, and `Memory Model` ->
+ *       the opposite case, and the interface states so twice: this declaration
+ *       requires the caller to provide a pre-allocated structure and does *not*
+ *       manage memory allocation for it, and `Memory Model` ->
  *       `Module Responsibilities` (docs/pages/halSpec.md) names
  *       docsis_GetErrorCodewords() among the calls where "the module allocates
  *       nothing on the caller's behalf", while the five calls that do hand back
@@ -1935,10 +1933,10 @@ INT cm_hal_GetIPv6DHCPInfo(PCMMGMT_CM_IPV6DHCP_INFO pInfo);
  *         wrongly typed argument is a call-site defect that retrying cannot fix.
  *
  * @note Allocation and ownership, and the part of it this interface leaves
- *       unusable. The declared type is `PCMMGMT_DML_CPE_LIST *`, and this block has
- *       always stated that the caller allocates the list and the mode string and
- *       frees both afterwards; `Memory Model` -> `Caller Responsibilities`
- *       (docs/pages/halSpec.md) repeats the release obligation. Those two statements
+ *       unusable. The declared type is `PCMMGMT_DML_CPE_LIST *`, and this interface
+ *       states that the caller allocates the list and the mode string and frees both
+ *       afterwards; `Memory Model` -> `Caller Responsibilities`
+ *       (docs/pages/halSpec.md) records the same release obligation. Those two statements
  *       do not compose into a rule a caller can follow for more than one entry, and
  *       the gap is worth stating plainly rather than papering over: `InstanceNum` is
  *       an output, and this interface publishes no maximum CPE count, so a caller has
@@ -2325,25 +2323,19 @@ INT cm_hal_HTTP_Download();
  *      state what is reported before one has been.
  * @post None. The call reports state and changes none.
  *
- * @return A progress or failure value, not a status code. This function does not
- *         return RETURN_OK or RETURN_ERR and a caller must not compare its result
- *         against them - RETURN_OK is 0, which here means "download not started", so
- *         the comparison would read a failure as success. The domain this interface
- *         defines is:
- *         - 0: download not started.
- *         - 1 to 99: download in progress, as a percentage completed.
- *         - 100: download complete and pending a reboot; cm_hal_Reboot_Ready() and
- *           cm_hal_HTTP_Download_Reboot_Now() are the next steps.
- *         - 400: the HTTP server URL is invalid.
- *         - 401: the HTTP server cannot be reached.
- *         - 402: the file was not found on the HTTP server.
- *         - 403 to 407: a download protection check failed - respectively HW_Type, HW
- *           Mask, DL Rev, DL Header and DL CVC.
- *         - 500: the download failed for a reason this interface does not partition
- *           further.
- *         Any other value is outside the domain this interface defines, and a caller
- *         should treat one as a failure rather than as progress.
- *
+ * @returns A progress or failure value rather than a status code, reported as a plain
+ *          `INT`: this interface declares no enumeration for it. A caller must not
+ *          compare the result against RETURN_OK or RETURN_ERR - RETURN_OK is 0, which
+ *          here means "download not started", so the comparison would read a failure
+ *          as success. Two of the outcomes this interface defines are bands rather
+ *          than single codes, and are documented here for that reason: 1 to 99 is a
+ *          download in progress, as a percentage completed, and a client keeps
+ *          polling; 403 to 407 each report a failed download protection check -
+ *          respectively HW_Type, HW Mask, DL Rev, DL Header and DL CVC - which a
+ *          client resolves by staging an image that matches the device rather than by
+ *          retrying the same one. The discrete codes are documented individually
+ *          below. Any other value is outside the domain this interface defines, and a
+ *          caller treats one as a failure rather than as progress.
  * @retval 0 No download has been started, or the previous one left no state to report. A
  *           client that expected a transfer to be running re-checks its configuration and
  *           starts one.
@@ -2360,9 +2352,6 @@ INT cm_hal_HTTP_Download();
  *             logs it and consults `cm_vendor_hal.log`; this interface does not state
  *             whether it is transient, so a bounded retry is reasonable but not guaranteed
  *             to succeed.
- *
- *         The values are
- *         reported as a plain `INT`: this interface declares no enumeration for them.
  *
  * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
  *       every call in this interface to complete within a period commensurate with
@@ -3029,11 +3018,11 @@ INT cm_hal_HTTP_LED_Flash(BOOLEAN LedFlash);
  *         wrongly typed argument is a call-site defect that retrying cannot fix.
  *
  * @note Allocation and ownership. This is one of the five calls in this interface
- *       that hand back memory the caller must release: this block has always stated
- *       that the caller deallocates `ppinfo`, and `Memory Model` ->
- *       `Caller Responsibilities` (docs/pages/halSpec.md) names docsis_GetDsOfdmChanTable()
- *       among the three table calls that return a dynamically allocated array whose
- *       length they report through their entry-count argument. The interface names
+ *       that hand back memory the caller must release: the caller deallocates
+ *       `ppinfo`, and `Memory Model` -> `Caller Responsibilities`
+ *       (docs/pages/halSpec.md) names docsis_GetDsOfdmChanTable() among the three
+ *       table calls that return a dynamically allocated array whose length they
+ *       report through their entry-count argument. The interface names
  *       neither the allocator nor the release function that matches it, and does not
  *       state whether the outputs are written on failure, so a caller agrees the
  *       release convention with the vendor implementation and initialises `*ppinfo`
@@ -3101,11 +3090,11 @@ INT docsis_GetDsOfdmChanTable(PDOCSIF31_CM_DS_OFDM_CHAN *ppinfo, int *output_Num
  *         wrongly typed argument is a call-site defect that retrying cannot fix.
  *
  * @note Allocation and ownership. This is one of the five calls in this interface
- *       that hand back memory the caller must release: this block has always stated
- *       that the caller deallocates `ppinfo`, and `Memory Model` ->
- *       `Caller Responsibilities` (docs/pages/halSpec.md) names docsis_GetUsOfdmaChanTable()
- *       among the three table calls that return a dynamically allocated array whose
- *       length they report through their entry-count argument. The interface names
+ *       that hand back memory the caller must release: the caller deallocates
+ *       `ppinfo`, and `Memory Model` -> `Caller Responsibilities`
+ *       (docs/pages/halSpec.md) names docsis_GetUsOfdmaChanTable() among the three
+ *       table calls that return a dynamically allocated array whose length they
+ *       report through their entry-count argument. The interface names
  *       neither the allocator nor the release function that matches it, and does not
  *       state whether the outputs are written on failure, so a caller agrees the
  *       release convention with the vendor implementation and initialises `*ppinfo`
@@ -3172,11 +3161,11 @@ INT docsis_GetUsOfdmaChanTable(PDOCSIF31_CM_US_OFDMA_CHAN *ppinfo, int *output_N
  *         wrongly typed argument is a call-site defect that retrying cannot fix.
  *
  * @note Allocation and ownership. This is one of the five calls in this interface
- *       that hand back memory the caller must release: this block has always stated
- *       that the caller deallocates `ppinfo`, and `Memory Model` ->
- *       `Caller Responsibilities` (docs/pages/halSpec.md) names docsis_GetStatusOfdmaUsTable()
- *       among the three table calls that return a dynamically allocated array whose
- *       length they report through their entry-count argument. The interface names
+ *       that hand back memory the caller must release: the caller deallocates
+ *       `ppinfo`, and `Memory Model` -> `Caller Responsibilities`
+ *       (docs/pages/halSpec.md) names docsis_GetStatusOfdmaUsTable() among the three
+ *       table calls that return a dynamically allocated array whose length they
+ *       report through their entry-count argument. The interface names
  *       neither the allocator nor the release function that matches it, and does not
  *       state whether the outputs are written on failure, so a caller agrees the
  *       release convention with the vendor implementation and initialises `*ppinfo`
@@ -3194,15 +3183,6 @@ INT docsis_GetUsOfdmaChanTable(PDOCSIF31_CM_US_OFDMA_CHAN *ppinfo, int *output_N
  */
 INT docsis_GetStatusOfdmaUsTable(PDOCSIF31_CMSTATUSOFDMA_US *ppinfo, int *output_NumberOfEntries);
 
-/*
- * The declaration below returns a three-way result rather than a status, and it is the
- * only one in this interface that does. The values it reports are the ENABLE, DISABLE
- * and RETURN_ERR macros defined at the top of this header: this interface declares no
- * enumeration for them, so a caller compares an INT against the macro names and cannot
- * switch over a named type. `Internal Error Handling` (docs/pages/halSpec.md) records
- * the same for the four value-returning declarations.
- */
-
 /**
  * @brief Reports whether Low Latency DOCSIS is enabled in the modem's bootfile.
  *
@@ -3218,29 +3198,23 @@ INT docsis_GetStatusOfdmaUsTable(PDOCSIF31_CMSTATUSOFDMA_US *ppinfo, int *output
  *      worst, and must enforce the order itself.
  * @post None. The call reports state and changes none.
  *
- * @return One of three values, which are macros rather than members of an enumeration
- *         and must be compared as such:
+ * @returns One of three values - ENABLE (1), DISABLE (0) or RETURN_ERR (-1) - which are
+ *          macros rather than members of an enumeration, so a caller compares an `INT`
+ *          against the macro names and cannot switch over a named type. The result is a
+ *          three-way outcome and not a status code in the RETURN_OK sense: RETURN_OK is
+ *          0, which is DISABLE here, so a caller that compares the result against
+ *          RETURN_OK would read "disabled" as "succeeded".
  * @retval ENABLE LLD is enabled in the bootfile, so a client may rely on the low-latency
  *         service being configured.
- * @retval DISABLE LLD is disabled in the bootfile, or the entry is absent. This interface
- *         does not distinguish those two cases, so a client must not read DISABLE as an
+ * @retval DISABLE LLD is disabled in the bootfile, or the entry is absent altogether. This
+ *         interface does not distinguish the two, so a client cannot tell "provisioned
+ *         off" from "not provisioned" - which `Optional Components`
+ *         (docs/pages/halSpec.md) states explicitly - and must not read DISABLE as an
  *         error.
  * @retval RETURN_ERR The status could not be retrieved - for example an unreadable bootfile
- *         or firmware that does not support the query. A client logs it and consults
- *         `cm_vendor_hal.log`, and must not treat it as DISABLE.
- *
- *         - ENABLE (1): LLD is enabled in the bootfile.
- *         - DISABLE (0): LLD is disabled in the bootfile, or the entry is absent
- *           altogether. This interface does not distinguish the two, so a caller
- *           cannot tell "provisioned off" from "not provisioned", which
- *           `Optional Components` (docs/pages/halSpec.md) states explicitly.
- *         - RETURN_ERR (-1): the status could not be read, for example on firmware
- *           that does not support the feature. This is the only value that indicates a
- *           failure, so a caller must test for it specifically and must not treat
- *           DISABLE as an error.
- *         The value is a result and not a status code in the RETURN_OK sense: RETURN_OK
- *         is 0, which is DISABLE here, so a caller that compares against RETURN_OK
- *         would read "disabled" as "succeeded".
+ *         or firmware that does not support the query. It is the only value that reports a
+ *         failure, so a client tests for it specifically, logs it and consults
+ *         `cm_vendor_hal.log`, and must not treat DISABLE as an error.
  *
  * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
  *       every call in this interface to complete within a period commensurate with
