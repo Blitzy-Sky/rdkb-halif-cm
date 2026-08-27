@@ -36,7 +36,7 @@
  * - Initialization is mandatory. cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS()
  *   come first, and no return code distinguishes "not initialized" from any other
  *   failure, so a caller enforces the order itself (`Initialization and Startup`,
- *   docs/pages/halSpec.md).
+ *   the HAL specification).
  * - There is no teardown. This header declares no de-initialization call, so the
  *   interface cannot be released and re-acquired within a process, and the one
  *   registered callback cannot be removed (`Object Lifecycles`, same document).
@@ -48,7 +48,7 @@
  * * Cable Modem Operations Support System Interface Specification: https://account.cablelabs.com/server/alfresco/3fb47021-ef6f-499f-a319-84fc2a0ccc0f
  *
  * Behaviour stated in this header is derived from these declarations and from the
- * repository specification at docs/pages/halSpec.md. Where neither establishes a
+ * repository specification. Where neither establishes a
  * behaviour, the block says so rather than filling the gap; nothing here is presented
  * as observed runtime behaviour.
  */
@@ -62,7 +62,7 @@
  * `#ifndef`-guarded aliases defined below, which resolve to the target's plain
  * `char`, `short`, `int` and `long` types. A caller must not assume a fixed width
  * for any of them - see the note on UINT8, and `Data Structures and Defines` in
- * docs/pages/halSpec.md, which tabulates them.
+ * the HAL specification, which tabulates them.
  */
 #include <stdint.h>
 #include <sys/time.h>
@@ -73,7 +73,7 @@
 /** Size in bytes of every fixed OFDM text array in this interface: the `averageSNR`
  *  and `PowerLevel` members of DOCSIF31_CM_DS_OFDM_CHAN. It is the array size, so a
  *  caller bounds its reads by it. Terminating the value inside it is the requirement
- *  `Memory Model` -> `Module Responsibilities` (docs/pages/halSpec.md) places on every
+ *  `Memory Model` -> `Module Responsibilities` in the HAL specification places on every
  *  string this module produces; no truncation behaviour is stated anywhere in this
  *  interface, so a caller must not assume a value it reads is complete. */
 #define OFDM_PARAM_STR_MAX_LEN 64
@@ -129,7 +129,7 @@ extern "C"{
  *  cm_hal_Get_HTTP_Download_Status() and docsis_LLDgetEnableStatus() - it carries a
  *  count, a progress or failure value, and a three-way enable result respectively,
  *  none of which may be compared against RETURN_OK. See `Internal Error Handling` in
- *  docs/pages/halSpec.md for the four return shapes - 44 binary status, 3 of these
+ *  the HAL specification for the four return shapes - 44 binary status, 3 of these
  *  non-status INT results, 2 non-INT values and 2 `void` - and which declarations use
  *  them. */
 #define INT   int
@@ -185,7 +185,7 @@ extern "C"{
  * They are `int` macros rather than members of an enumeration: no enumeration of
  * return codes is declared here, so a caller compares an INT result against these
  * names and cannot switch over a named type. `Internal Error Handling`
- * (docs/pages/halSpec.md) records the consequence - a caller learns that an operation
+ * in the HAL specification records the consequence - a caller learns that an operation
  * failed but not why, and the reason has to be found in the vendor log.
  */
 #ifndef RETURN_OK
@@ -268,12 +268,12 @@ extern "C"{
  * prototypes are written with the alias, so a caller has to know both. Neither
  * spelling is marked deprecated in this header, so either may be used where a
  * prototype leaves the choice; `Data Structures and Defines`
- * (docs/pages/halSpec.md) tabulates every one of them with its location.
+ * in the HAL specification tabulates every one of them with its location.
  *
  * Which side allocates a structure is decided per prototype, not per type, and it is
  * not uniform: most getters populate storage the caller owns, while five hand back
  * storage the caller must release. Each prototype states its own contract, and
- * `Memory Model` (docs/pages/halSpec.md) is the summary.
+ * `Memory Model` in the HAL specification is the summary.
  *
  * @{
  */
@@ -390,7 +390,7 @@ typedef struct _CMMGMT_CM_ERROR_CODEWORDS {
 /** Element count of the `docsDevEvText` array of CMMGMT_CM_EventLogEntry_t, 255.
  *  It is the array size, so a caller bounds its reads by it. Terminating the
  *  description inside it is the requirement `Memory Model` -> `Module
- *  Responsibilities` (docs/pages/halSpec.md) places on every string this module
+ *  Responsibilities` in the HAL specification places on every string this module
  *  produces; no truncation behaviour is stated anywhere in this interface, so a caller
  *  must not assume a description it reads is complete. */
 #define EVM_MAX_EVENT_TEXT      255
@@ -708,11 +708,11 @@ typedef struct _CM_DIPLEXER_SETTINGS {
  * consequences bind a caller and are repeated per declaration only where the client
  * action differs: a failure cannot be diagnosed from the return value, so the cause
  * has to be found in the vendor log `cm_vendor_hal.log` under `/rdklogs/logs/` as
- * `Logging and debugging requirements` (docs/pages/halSpec.md) requires; and an
+ * `Logging and debugging requirements` in the HAL specification requires; and an
  * output must be treated as unspecified after a failure rather than as unmodified.
  *
  * Five declarations do not follow that shape, and `Internal Error Handling`
- * (docs/pages/halSpec.md) tabulates them: docsis_GetUSChannelId(),
+ * in the HAL specification tabulates them: docsis_GetUSChannelId(),
  * docsis_GetDownFreq(), docsis_GetDocsisEventLogItems() and
  * cm_hal_Get_HTTP_Download_Status() return a value rather than a status, and
  * docsis_LLDgetEnableStatus() returns a three-way ENABLE / DISABLE / RETURN_ERR
@@ -725,7 +725,7 @@ typedef struct _CM_DIPLEXER_SETTINGS {
  * @addtogroup CM_HAL_APIS
  *
  * The 51 prototypes below are the whole callable surface of this interface, and
- * `API Surface` (docs/pages/halSpec.md) indexes every one of them. Three properties
+ * `API Surface` in the HAL specification indexes every one of them. Three properties
  * hold across the group: initialization comes first and there is no teardown; every
  * outcome is reported synchronously, in the vocabulary the note above describes; and
  * only a small set of values is writable - the upstream channel identifier, the
@@ -742,7 +742,7 @@ typedef struct _CM_DIPLEXER_SETTINGS {
  * This is the first call a caller makes into this interface. It establishes whatever
  * the vendor implementation needs in order to reach the modem - the header names
  * thread creation and file opening among the steps that can fail - and
- * `Object Lifecycles` (docs/pages/halSpec.md) describes it as setting up the database
+ * `Object Lifecycles` in the HAL specification describes it as setting up the database
  * connections and subsystems the rest of the interface relies on. There is no
  * matching de-initialization call anywhere in this header, so what this function
  * establishes lives for the lifetime of the process.
@@ -766,12 +766,12 @@ typedef struct _CM_DIPLEXER_SETTINGS {
  *         working around it, since nothing here reports the reason.
  *
  * @note Blocking: this is the one call `Initialization and Startup`
- *       (docs/pages/halSpec.md) expects to block, and it blocks while the hardware is
+ *       in the HAL specification expects to block, and it blocks while the hardware is
  *       not ready. It is the exception to the non-blocking requirement the rest of
  *       the interface carries, which is why a caller performs initialization on a
  *       thread whose progress nothing else depends on. No numeric timeout is
  *       specified by this interface.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -789,7 +789,7 @@ INT cm_hal_InitDB(void);
  * interface then draw on.
  *
  * @pre cm_hal_InitDB() has returned RETURN_OK. `Initialization and Startup`
- *      (docs/pages/halSpec.md) fixes that order, and no code here reports its
+ *      in the HAL specification fixes that order, and no code here reports its
  *      violation, so the caller enforces it.
  * @post On RETURN_OK the downstream PHY layer is ready. RETURN_ERR reports only that
  *       the initialization did not complete, and this interface defines no
@@ -803,7 +803,7 @@ INT cm_hal_InitDB(void);
  * @warning **RETURN_OK is the only value this interface documents for this call, and no
  *          failure code is established for it.** `cm_hal.h` defines `RETURN_ERR` for the
  *          `INT` status family, and cm_hal_InitDB() documents it explicitly, but nothing
- *          in this header, in `docs/pages/halSpec.md` or in the repository README states
+ *          in this header, in the HAL specification or in the repository README states
  *          that this function returns it, so a caller must not infer one from the fact
  *          that an initialization call can fail: a value other than `RETURN_OK` means
  *          only that the call did not report success. The reason is not reported - a
@@ -812,9 +812,9 @@ INT cm_hal_InitDB(void);
  *          on the downstream side.
  *
  * @note Blocking: synchronous, and part of the startup sequence whose first step
- *       cm_hal_InitDB() may block. `Blocking calls` (docs/pages/halSpec.md) states no
+ *       cm_hal_InitDB() may block. `Blocking calls` in the HAL specification states no
  *       numeric timeout for it.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -831,7 +831,7 @@ INT docsis_InitDS(void);
  * upstream direction and direct access to the upstream hardware.
  *
  * @pre cm_hal_InitDB() has returned RETURN_OK. `Initialization and Startup`
- *      (docs/pages/halSpec.md) fixes that order, and no code here reports its
+ *      in the HAL specification fixes that order, and no code here reports its
  *      violation, so the caller enforces it.
  * @post On RETURN_OK the upstream PHY layer is ready. As with docsis_InitDS() this
  *       interface does not establish what a failed initialization leaves behind, and
@@ -843,16 +843,16 @@ INT docsis_InitDS(void);
  * @warning **RETURN_OK is the only value this interface documents for this call, and no
  *          failure code is established for it.** As with docsis_InitDS(), `RETURN_ERR` is
  *          defined for the `INT` status family but is not stated for this function by this
- *          header, by `docs/pages/halSpec.md` or by the repository README, so a caller must
+ *          header, by the HAL specification or by the repository README, so a caller must
  *          not treat any particular non-`RETURN_OK` value as a defined failure indication.
  *          The reason is not reported: a client looks for the cause in the vendor log
  *          `cm_vendor_hal.log` under `/rdklogs/logs/` and must not issue any read on the
  *          upstream side.
  *
  * @note Blocking: synchronous, and part of the startup sequence whose first step
- *       cm_hal_InitDB() may block. `Blocking calls` (docs/pages/halSpec.md) states no
+ *       cm_hal_InitDB() may block. `Blocking calls` in the HAL specification states no
  *       numeric timeout for it.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -874,13 +874,13 @@ INT docsis_InitUS(void);
  *                         which the implementation writes one of the values listed
  *                         below as a NUL-terminated string. Termination here is the
  *                         requirement `Memory Model` -> `Module Responsibilities`
- *                         (docs/pages/halSpec.md) places on every string this module
+ *                         in the HAL specification places on every string this module
  *                         produces, rather than something the declaration itself
  *                         states, and no length out-parameter accompanies the buffer,
  *                         so the terminator is the only extent a caller has. It must
  *                         not be NULL. The 40-byte minimum is the bound this
  *                         interface fixes and `Memory Model` -> `Caller
- *                         Responsibilities` (docs/pages/halSpec.md) repeats; a
+ *                         Responsibilities` in the HAL specification repeats; a
  *                         shorter buffer is a caller defect, and the interface states
  *                         no truncation behaviour that would make one safe. The
  *                         caller owns the storage throughout and nothing here retains
@@ -891,7 +891,7 @@ INT docsis_InitUS(void);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -904,7 +904,7 @@ INT docsis_InitUS(void);
  * @retval RETURN_OK  - A status string was written and may be read.
  * @retval RETURN_ERR - No status may be read.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
@@ -941,13 +941,13 @@ INT docsis_InitUS(void);
  *       infer a state machine from the list, must not wait for one value on the
  *       strength of having seen another, and reads each value only as the condition
  *       reported at the moment of the call. `State Diagram`
- *       (docs/pages/halSpec.md) records the same limitation for this interface.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ *       in the HAL specification records the same limitation for this interface.
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -979,7 +979,7 @@ INT docsis_getCMStatus(CHAR *cm_status);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure,
  *      so a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -993,7 +993,7 @@ INT docsis_getCMStatus(CHAR *cm_status);
  *         is responsible for releasing it.
  * @retval RETURN_ERR - No record may be read.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly typed argument is a call-site defect that retrying cannot fix.
@@ -1001,7 +1001,7 @@ INT docsis_getCMStatus(CHAR *cm_status);
  * @note Allocation and ownership. This is one of the five calls in this interface
  *       that hand back memory the caller must release: the caller is responsible for
  *       freeing the dynamically allocated memory of the returned structure, and
- *       `Memory Model` -> `Caller Responsibilities` (docs/pages/halSpec.md) names
+ *       `Memory Model` -> `Caller Responsibilities` in the HAL specification names
  *       docsis_GetDSChannel() among them, recording that failing to free the result
  *       is a leak in the caller rather than in the HAL. Two parts of that contract
  *       this interface does not establish, and a caller must not guess at either: it
@@ -1012,12 +1012,12 @@ INT docsis_getCMStatus(CHAR *cm_status);
  *       RETURN_ERR and a leak on that path cannot be ruled out from the interface
  *       alone. Initialising `*ppinfo` to NULL before the call is what makes the
  *       difference observable at all.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1051,7 +1051,7 @@ INT docsis_GetDSChannel(PCMMGMT_CM_DS_CHANNEL *ppinfo);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1066,16 +1066,16 @@ INT docsis_GetDSChannel(PCMMGMT_CM_DS_CHANNEL *ppinfo);
  *         is walking channels stops at the first failure rather than treating it as
  *         "this index only".
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1104,7 +1104,7 @@ INT docsis_GetUsStatus(USHORT i, PCMMGMT_CM_US_CHANNEL pinfo);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure,
  *      so a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1118,24 +1118,24 @@ INT docsis_GetUsStatus(USHORT i, PCMMGMT_CM_US_CHANNEL pinfo);
  *         is responsible for releasing it.
  * @retval RETURN_ERR - No record may be read.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly typed argument is a call-site defect that retrying cannot fix.
  *
  * @note Allocation and ownership. Identical to docsis_GetDSChannel(): the
  *       implementation allocates the record and `Memory Model` ->
- *       `Caller Responsibilities` (docs/pages/halSpec.md) places its release on the
+ *       `Caller Responsibilities` in the HAL specification places its release on the
  *       caller, while the interface names neither the allocator nor the matching
  *       release function and does not state whether `*ppinfo` is written on failure.
  *       A caller settles the release convention with the vendor implementation and
  *       initialises `*ppinfo` to NULL before the call.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1159,19 +1159,19 @@ INT docsis_GetUSChannel(PCMMGMT_CM_US_CHANNEL *ppinfo);
  *                     and continues to own; it must not be NULL. The implementation
  *                     writes through the pointer and allocates nothing:
  *                     `Memory Model` -> `Caller Responsibilities`
- *                     (docs/pages/halSpec.md) names this call among those where the
+ *                     in the HAL specification names this call among those where the
  *                     module allocates nothing on the caller's behalf. Nothing here
  *                     retains the pointer beyond the call. Every text member of the
  *                     record is a 64-byte array, which bounds what may be read from
  *                     it; terminating the value inside each is the requirement
  *                     `Memory Model` -> `Module Responsibilities`
- *                     (docs/pages/halSpec.md) places on every string this module
+ *                     in the HAL specification places on every string this module
  *                     produces, and no truncation behaviour is stated, so a caller
  *                     must not assume a value it reads is complete.
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1184,16 +1184,16 @@ INT docsis_GetUSChannel(PCMMGMT_CM_US_CHANNEL *ppinfo);
  * @retval RETURN_OK  - The record was populated and may be read.
  * @retval RETURN_ERR - Nothing may be read from `*pinfo`.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1217,7 +1217,7 @@ INT docsis_GetDOCSISInfo(PCMMGMT_CM_DOCSIS_INFO pinfo);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1230,16 +1230,16 @@ INT docsis_GetDOCSISInfo(PCMMGMT_CM_DOCSIS_INFO pinfo);
  * @retval RETURN_ERR - No count may be read. A NULL `cnt` and a failed read are
  *         reported identically.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1263,7 +1263,7 @@ INT docsis_GetNumOfActiveTxChannels(ULONG *cnt);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1276,16 +1276,16 @@ INT docsis_GetNumOfActiveTxChannels(ULONG *cnt);
  * @retval RETURN_ERR - No count may be read. A NULL `cnt` and a failed read are
  *         reported identically.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1316,7 +1316,7 @@ INT docsis_GetNumOfActiveRxChannels(ULONG *cnt);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure,
  *      so a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself. In addition, `*ppinfo` must address
@@ -1333,7 +1333,7 @@ INT docsis_GetNumOfActiveRxChannels(ULONG *cnt);
  * @retval RETURN_ERR - Nothing may be read from the record. A NULL `ppinfo` and a
  *         failed scan are reported identically.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly typed argument is a call-site defect that retrying cannot fix.
@@ -1346,7 +1346,7 @@ INT docsis_GetNumOfActiveRxChannels(ULONG *cnt);
  *       the opposite case, and the interface states so twice: this declaration
  *       requires the caller to provide a pre-allocated structure and does *not*
  *       manage memory allocation for it, and `Memory Model` ->
- *       `Module Responsibilities` (docs/pages/halSpec.md) names
+ *       `Module Responsibilities` in the HAL specification names
  *       docsis_GetErrorCodewords() among the calls where "the module allocates
  *       nothing on the caller's behalf", while the five calls that do hand back
  *       memory the caller must release are listed under `Caller Responsibilities`
@@ -1370,12 +1370,12 @@ INT docsis_GetNumOfActiveRxChannels(ULONG *cnt);
  *       an implementation that writes through an unset pointer instead may corrupt
  *       caller memory, so a caller must never pass an uninitialised `*ppinfo` and
  *       must not read a returned RETURN_ERR as evidence that nothing was written.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1395,7 +1395,7 @@ INT docsis_GetErrorCodewords(PCMMGMT_CM_ERROR_CODEWORDS *ppinfo);
  *                      which the implementation writes one of the values listed below
  *                      as a NUL-terminated string. Termination here is the
  *                      requirement `Memory Model` -> `Module Responsibilities`
- *                      (docs/pages/halSpec.md) places on every string this module
+ *                      in the HAL specification places on every string this module
  *                      produces, rather than something the declaration itself states,
  *                      and no length out-parameter accompanies the buffer, so the
  *                      terminator is the only extent a caller has. It must not be
@@ -1406,7 +1406,7 @@ INT docsis_GetErrorCodewords(PCMMGMT_CM_ERROR_CODEWORDS *ppinfo);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1419,7 +1419,7 @@ INT docsis_GetErrorCodewords(PCMMGMT_CM_ERROR_CODEWORDS *ppinfo);
  * @retval RETURN_OK  - A mode string was written and may be read.
  * @retval RETURN_ERR - No mode may be read.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
@@ -1431,12 +1431,12 @@ INT docsis_GetErrorCodewords(PCMMGMT_CM_ERROR_CODEWORDS *ppinfo);
  *       the expected behaviour of this getter is to return only the three values
  *       above, and docsis_SetMddIpModeOverride() cannot set either of them. A caller
  *       that sees one has met an implementation departing from this contract.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1450,7 +1450,7 @@ INT docsis_GetMddIpModeOverride(CHAR *pValue);
  * Pins the address families the modem may provision, or hands the decision back to
  * the MDD the network sends. It is one of the few values this interface lets a caller
  * write, and this interface does not state whether the value survives a reboot -
- * `Persistence Model` (docs/pages/halSpec.md) records that no persistence guarantee
+ * `Persistence Model` in the HAL specification records that no persistence guarantee
  * is given, so a caller that needs one re-applies the value after a restart.
  *
  * @param[in] pValue - NUL-terminated mode string the caller owns. The settable values
@@ -1465,7 +1465,7 @@ INT docsis_GetMddIpModeOverride(CHAR *pValue);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1479,7 +1479,7 @@ INT docsis_GetMddIpModeOverride(CHAR *pValue);
  * @retval RETURN_ERR - The request did not succeed. An unrecognised value and a failed
  *         write are reported identically.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client looks for the cause in the vendor log `cm_vendor_hal.log` under
  *         `/rdklogs/logs/`. Because the resulting override is unspecified, the
  *         client determines it by reading docsis_GetMddIpModeOverride() back rather
@@ -1488,12 +1488,12 @@ INT docsis_GetMddIpModeOverride(CHAR *pValue);
  *
  * @note "APM" and "DualStack" may be returned by docsis_GetMddIpModeOverride() on
  *       some implementations but cannot be set through this function.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1511,7 +1511,7 @@ INT docsis_SetMddIpModeOverride(CHAR *pValue);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1523,16 +1523,16 @@ INT docsis_SetMddIpModeOverride(CHAR *pValue);
  *         sentinel value within the range that would mark a failed read. A caller
  *         consequently cannot distinguish a failure from a genuine identifier through
  *         the return value alone, which `Internal Error Handling`
- *         (docs/pages/halSpec.md) states explicitly; where that matters it corroborates
+ *         in the HAL specification states explicitly; where that matters it corroborates
  *         the reading against docsis_GetUsStatus() or the surrounding registration
  *         state.
  *
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1545,7 +1545,7 @@ UINT8 docsis_GetUSChannelId(void);
  *
  * The write counterpart of docsis_GetUSChannelId(). It reports nothing, so a caller
  * that must confirm the change reads the value back - `Method Sequencing`
- * (docs/pages/halSpec.md) names this write-then-read pattern for the interface's two
+ * in the HAL specification names this write-then-read pattern for the interface's two
  * `void` setters. This interface also states no persistence guarantee for the value,
  * so it is re-applied after a restart if it must hold.
  *
@@ -1558,7 +1558,7 @@ UINT8 docsis_GetUSChannelId(void);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1569,12 +1569,12 @@ UINT8 docsis_GetUSChannelId(void);
  *
  * @note This function returns nothing, deliberately: there is no status to test and a
  *       caller must not infer success from the call having returned.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1592,7 +1592,7 @@ void docsis_SetUSChannelId(INT index);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1603,16 +1603,16 @@ void docsis_SetUSChannelId(INT index);
  *         places on the quantity. It is a frequency and not a status code: this function
  *         returns no RETURN_OK or RETURN_ERR, and this interface defines no sentinel -
  *         not even zero - for a failed read, a gap `Internal Error Handling`
- *         (docs/pages/halSpec.md) states explicitly. docsis_GetDSChannel() reports the
+ *         in the HAL specification states explicitly. docsis_GetDSChannel() reports the
  *         same channel's frequency as text in a unit this interface does not state, so
  *         it corroborates this value only for plausibility, not for equality.
  *
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1638,7 +1638,7 @@ ULONG docsis_GetDownFreq(void);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1648,12 +1648,12 @@ ULONG docsis_GetDownFreq(void);
  *
  * @note This function returns nothing, deliberately: there is no status to test and a
  *       caller must not infer success from the call having returned.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1688,7 +1688,7 @@ void docsis_SetStartFreq(ULONG value);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1700,19 +1700,19 @@ void docsis_SetStartFreq(ULONG value);
  * @return The number of log entries written into `entryArray`, which is at most `len`.
  *         This is a count and not a status code: the function returns no RETURN_OK,
  *         and zero is a meaningful answer meaning the log held nothing to report.
- *         `Internal Error Handling` (docs/pages/halSpec.md) calls this the well-behaved
+ *         `Internal Error Handling` in the HAL specification calls this the well-behaved
  *         member of the value-returning set for that reason. This interface does not
  *         state how a failed read is reported through the count, so a caller must not
  *         read zero as an error, and - since the return type is signed - must treat a
  *         negative value as a failure rather than as a count even though none is
  *         documented.
  *
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1731,7 +1731,7 @@ INT docsis_GetDocsisEventLogItems(CMMGMT_CM_EventLogEntry_t *entryArray, INT len
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1745,7 +1745,7 @@ INT docsis_GetDocsisEventLogItems(CMMGMT_CM_EventLogEntry_t *entryArray, INT len
  * @retval RETURN_ERR - The request was not accepted, for example because the log
  *         clear entry could not be set.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client looks for the cause in the vendor log `cm_vendor_hal.log` under
  *         `/rdklogs/logs/`. The call takes no arguments, so there is nothing at the
  *         call site to correct in response: a client that sees the failure persist
@@ -1754,10 +1754,10 @@ INT docsis_GetDocsisEventLogItems(CMMGMT_CM_EventLogEntry_t *entryArray, INT len
  *
  * @note Blocking: this function must not block and must not use blocking system
  *       calls - the obligation is stated on this declaration and repeated under
- *       `Blocking calls` (docs/pages/halSpec.md), and it is the reason the clearing is
+ *       `Blocking calls` in the HAL specification, and it is the reason the clearing is
  *       asynchronous. A caller may therefore call it from a context that cannot
  *       tolerate a wait.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1779,7 +1779,7 @@ INT docsis_ClearDocsisEventLog(void);
  * @param[out] pInfo - Pointer to a `CMMGMT_CM_DHCP_INFO` the caller has allocated and
  *                     continues to own; it must not be NULL. The implementation writes
  *                     through the pointer and allocates nothing - `Memory Model` ->
- *                     `Caller Responsibilities` (docs/pages/halSpec.md) names this call
+ *                     `Caller Responsibilities` in the HAL specification names this call
  *                     among those where the module allocates nothing on the caller's
  *                     behalf - and nothing here retains the pointer. The record's text
  *                     members are fixed arrays (256 bytes for the boot file name, 64
@@ -1789,7 +1789,7 @@ INT docsis_ClearDocsisEventLog(void);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1805,16 +1805,16 @@ INT docsis_ClearDocsisEventLog(void);
  *         cannot tell "no lease held" from "read failed" here; docsis_getCMStatus()
  *         is where the DHCP stage of bring-up is visible.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1835,13 +1835,13 @@ INT cm_hal_GetDHCPInfo(PCMMGMT_CM_DHCP_INFO pInfo);
  *                     and continues to own; it must not be NULL. The implementation
  *                     writes through the pointer and allocates nothing, per
  *                     `Memory Model` -> `Caller Responsibilities`
- *                     (docs/pages/halSpec.md), and nothing here retains it. The
+ *                     in the HAL specification, and nothing here retains it. The
  *                     address members are 40-byte arrays and the boot file name is
  *                     256 bytes, which bound what may be read from them.
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1857,16 +1857,16 @@ INT cm_hal_GetDHCPInfo(PCMMGMT_CM_DHCP_INFO pInfo);
  *         distinguished from a failed read; docsis_GetMddIpModeOverride() and
  *         docsis_getCMStatus() are where the provisioning mode is visible.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1899,7 +1899,7 @@ INT cm_hal_GetIPv6DHCPInfo(PCMMGMT_CM_IPV6DHCP_INFO pInfo);
  * @param[in]  LanMode - NUL-terminated mode string, "router" or "bridge", of at most
  *                         100 bytes, which is the bound both this header and
  *                         `Memory Model` -> `Caller Responsibilities`
- *                         (docs/pages/halSpec.md) state; neither says whether the
+ *                         in the HAL specification state; neither says whether the
  *                         terminator counts toward it, so a caller that is anywhere
  *                         near the limit stays within 99 characters plus the
  *                         terminator. The two documented values are far shorter.
@@ -1913,7 +1913,7 @@ INT cm_hal_GetIPv6DHCPInfo(PCMMGMT_CM_IPV6DHCP_INFO pInfo);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure,
  *      so a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1927,7 +1927,7 @@ INT cm_hal_GetIPv6DHCPInfo(PCMMGMT_CM_IPV6DHCP_INFO pInfo);
  * @retval RETURN_ERR - Nothing may be read. An invalid mode string, a NULL argument
  *         and a failed read are reported identically.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly typed argument is a call-site defect that retrying cannot fix.
@@ -1936,7 +1936,7 @@ INT cm_hal_GetIPv6DHCPInfo(PCMMGMT_CM_IPV6DHCP_INFO pInfo);
  *       unusable. The declared type is `PCMMGMT_DML_CPE_LIST *`, and this interface
  *       states that the caller allocates the list and the mode string and frees both
  *       afterwards; `Memory Model` -> `Caller Responsibilities`
- *       (docs/pages/halSpec.md) records the same release obligation. Those two statements
+ *       in the HAL specification records the same release obligation. Those two statements
  *       do not compose into a rule a caller can follow for more than one entry, and
  *       the gap is worth stating plainly rather than papering over: `InstanceNum` is
  *       an output, and this interface publishes no maximum CPE count, so a caller has
@@ -1948,12 +1948,12 @@ INT cm_hal_GetIPv6DHCPInfo(PCMMGMT_CM_IPV6DHCP_INFO pInfo);
  *       function, and in the meantime initialises `*ppCPEList` to NULL rather than
  *       passing an uninitialised pointer, because under the caller-allocated reading
  *       the implementation would write through whatever it holds.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -1965,7 +1965,7 @@ INT cm_hal_GetCPEList(PCMMGMT_DML_CPE_LIST *ppCPEList, ULONG *InstanceNum, CHAR 
  * @brief Reports the market region the modem is built for.
  *
  * The region decides plant-dependent behaviour a caller may have to branch on -
- * `Platform or Product Customization` (docs/pages/halSpec.md) names this call as one
+ * `Platform or Product Customization` in the HAL specification names this call as one
  * of the four runtime readings that express product variation in this interface, since
  * it declares no compile-time variant flags at all.
  *
@@ -1973,7 +1973,7 @@ INT cm_hal_GetCPEList(PCMMGMT_DML_CPE_LIST *ppCPEList, ULONG *InstanceNum, CHAR 
  *                      which the implementation writes the region identifier as a
  *                      NUL-terminated string. Termination here is the requirement
  *                      `Memory Model` -> `Module Responsibilities`
- *                      (docs/pages/halSpec.md) places on every string this module
+ *                      in the HAL specification places on every string this module
  *                      produces, rather than something the declaration itself states,
  *                      and no length out-parameter accompanies the buffer, so the
  *                      terminator is the only extent a caller has. It must not be
@@ -1987,7 +1987,7 @@ INT cm_hal_GetCPEList(PCMMGMT_DML_CPE_LIST *ppCPEList, ULONG *InstanceNum, CHAR 
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -1999,20 +1999,20 @@ INT cm_hal_GetCPEList(PCMMGMT_DML_CPE_LIST *ppCPEList, ULONG *InstanceNum, CHAR 
  * @retval RETURN_OK  - A region identifier was written and may be read.
  * @retval RETURN_ERR - No region may be read. A NULL pointer, a buffer smaller than
  *         100 bytes and a failed read are reported identically. `Optional Components`
- *         (docs/pages/halSpec.md) records that this interface does not establish
+ *         in the HAL specification records that this interface does not establish
  *         whether every platform implements this call, so a client treats a persistent
  *         failure as "not reported on this platform" rather than as a fault.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2022,7 +2022,7 @@ INT cm_hal_GetMarket(CHAR *market);
 
 /*
  * HTTP download prototypes. These eight declarations are a sequence rather than eight
- * independent calls, and `Method Sequencing` (docs/pages/halSpec.md) states the order:
+ * independent calls, and `Method Sequencing` in the HAL specification states the order:
  * set the URL and filename, optionally select the network interface, initiate the
  * download, poll its status until it completes, then check reboot readiness and
  * reboot. Progress is polled through cm_hal_Get_HTTP_Download_Status() rather than
@@ -2052,7 +2052,7 @@ INT cm_hal_GetMarket(CHAR *market);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2071,7 +2071,7 @@ INT cm_hal_GetMarket(CHAR *market);
  *         an invalid URL are the causes this declaration names, and they are not
  *         distinguished from each other.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client looks for the cause in the vendor log `cm_vendor_hal.log` under
  *         `/rdklogs/logs/`. Because the resulting configuration is unspecified, the
  *         client determines it by reading cm_hal_Get_HTTP_Download_Url() back and
@@ -2092,12 +2092,12 @@ INT cm_hal_GetMarket(CHAR *market);
  *          RETURN_ERR, and it does not define what makes one invalid. A caller is
  *          therefore responsible for the scheme, host and path it passes, and for the
  *          trust decision that follows from downloading firmware from them.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2114,7 +2114,7 @@ INT cm_hal_Set_HTTP_Download_Url(char *pHttpUrl, char *pfilename);
  * @param[out] pHttpUrl  - Caller-allocated buffer of at least 200 bytes for the URL;
  *                         it must not be NULL. The 200-byte minimum is stated by this
  *                         interface and repeated under `Memory Model` ->
- *                         `Caller Responsibilities` (docs/pages/halSpec.md), which
+ *                         `Caller Responsibilities` in the HAL specification, which
  *                         also records the consequence of ignoring it: an
  *                         insufficient buffer can lead to memory corruption, because
  *                         no truncation behaviour is specified that would make a
@@ -2124,12 +2124,12 @@ INT cm_hal_Set_HTTP_Download_Url(char *pHttpUrl, char *pfilename);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
  * @post On RETURN_OK both buffers hold NUL-terminated values, which is the requirement
- *       `Memory Model` -> `Module Responsibilities` (docs/pages/halSpec.md) places on
+ *       `Memory Model` -> `Module Responsibilities` in the HAL specification places on
  *       every string this module produces; no length out-parameter accompanies either
  *       buffer, so the terminator is the only extent a caller has. On RETURN_ERR their
  *       contents are not specified by this interface, so a caller must not assume
@@ -2142,16 +2142,16 @@ INT cm_hal_Set_HTTP_Download_Url(char *pHttpUrl, char *pfilename);
  *         cm_hal_Set_HTTP_Download_Url() should expect this rather than an empty
  *         string.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2175,7 +2175,7 @@ INT cm_hal_Get_HTTP_Download_Url(char *pHttpUrl, char *pfilename);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2190,19 +2190,19 @@ INT cm_hal_Get_HTTP_Download_Url(char *pHttpUrl, char *pfilename);
  * @retval RETURN_ERR - The request did not succeed; an invalid selector is the
  *         cause this declaration names.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client looks for the cause in the vendor log `cm_vendor_hal.log` under
  *         `/rdklogs/logs/`. Because the resulting selection is unspecified, the
  *         client determines it by reading cm_hal_Get_HTTP_Download_Interface() back
  *         rather than assuming either value, and corrects a selector outside
  *         {0, 1} at the call site, which a retry cannot fix, before starting a
  *         download.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2225,7 +2225,7 @@ INT cm_hal_Set_HTTP_Download_Interface(unsigned int interface);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2236,16 +2236,16 @@ INT cm_hal_Set_HTTP_Download_Interface(unsigned int interface);
  * @retval RETURN_OK  - The selector was written and may be read.
  * @retval RETURN_ERR - No selector may be read.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2258,12 +2258,12 @@ INT cm_hal_Get_HTTP_Download_Interface(unsigned int *pinterface);
  *
  * The transfer itself is not carried out inside this call: it starts one and returns,
  * and a caller follows its progress with cm_hal_Get_HTTP_Download_Status(). That
- * split is deliberate - `Blocking calls` (docs/pages/halSpec.md) names it as this
+ * split is deliberate - `Blocking calls` in the HAL specification names it as this
  * interface's answer to not blocking for the duration of a firmware transfer.
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2283,7 +2283,7 @@ INT cm_hal_Get_HTTP_Download_Interface(unsigned int *pinterface);
  * @retval RETURN_ERR - The request to start was not accepted; a download already in
  *         progress is the cause this declaration names.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client looks for the cause in the vendor log `cm_vendor_hal.log` under
  *         `/rdklogs/logs/`. The call takes no arguments, so there is nothing at the
  *         call site to correct in response, and because a transfer may nonetheless be
@@ -2292,12 +2292,12 @@ INT cm_hal_Get_HTTP_Download_Interface(unsigned int *pinterface);
  *
  * @note The declaration takes an empty parameter list rather than `(void)`, so in C
  *       it does not prototype its arguments; a caller passes none.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2309,13 +2309,13 @@ INT cm_hal_HTTP_Download();
  * @brief Reports the progress or failure of the HTTP firmware download.
  *
  * This is the interface's whole progress mechanism - `Asynchronous Notification Model`
- * (docs/pages/halSpec.md) records that download progress is polled here and not
+ * in the HAL specification records that download progress is polled here and not
  * pushed - so a caller calls it repeatedly after cm_hal_HTTP_Download() until it
  * reports completion or a failure.
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2353,12 +2353,12 @@ INT cm_hal_HTTP_Download();
  *             whether it is transient, so a bounded retry is reasonable but not guaranteed
  *             to succeed.
  *
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2383,7 +2383,7 @@ INT cm_hal_Get_HTTP_Download_Status();
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2396,16 +2396,16 @@ INT cm_hal_Get_HTTP_Download_Status();
  * @retval RETURN_ERR - No indication may be read; a failed status retrieval or
  *         resource access is the cause this declaration names.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2423,7 +2423,7 @@ INT cm_hal_Reboot_Ready(ULONG *pValue);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2444,7 +2444,7 @@ INT cm_hal_Reboot_Ready(ULONG *pValue);
  *         be created or the reboot itself failed. How much of the sequence ran is not
  *         reported, so a partly completed reboot cannot be told from one that never
  *         started. The reason is not reported either: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client looks for the cause in the vendor log `cm_vendor_hal.log` under
  *         `/rdklogs/logs/`. The call takes no arguments, so there is nothing at the
  *         call site to correct: a client re-checks cm_hal_Reboot_Ready() and reads
@@ -2454,9 +2454,9 @@ INT cm_hal_Reboot_Ready(ULONG *pValue);
  *       it does not prototype its arguments; a caller passes none.
  * @note Blocking: this call ends with a device reboot, so the usual expectation that a
  *       call returns promptly is beside the point - a caller should treat it as the
- *       last thing it does. `Blocking calls` (docs/pages/halSpec.md) states no numeric
+ *       last thing it does. `Blocking calls` in the HAL specification states no numeric
  *       timeout for it.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2470,7 +2470,7 @@ INT cm_hal_HTTP_Download_Reboot_Now();
  * The most destructive operation in this interface: it replaces the firmware and
  * discards the device's configuration in one step. It is a recovery action rather than
  * a power or provisioning control - `Power Management Requirements`
- * (docs/pages/halSpec.md) makes that distinction explicitly.
+ * in the HAL specification makes that distinction explicitly.
  *
  * @param[in] pUrl - NUL-terminated URL of the firmware image the caller owns, for
  *                   example
@@ -2485,7 +2485,7 @@ INT cm_hal_HTTP_Download_Reboot_Now();
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2503,7 +2503,7 @@ INT cm_hal_HTTP_Download_Reboot_Now();
  * @retval RETURN_ERR - The request did not succeed; a reboot already in progress
  *         is the cause this declaration names, among others it does not distinguish.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client looks for the cause in the vendor log `cm_vendor_hal.log` under
  *         `/rdklogs/logs/`. How far the operation progressed is not reported either,
  *         so a failure here does not mean the firmware and the configuration are as
@@ -2519,7 +2519,7 @@ INT cm_hal_HTTP_Download_Reboot_Now();
  *       retained.
  * @note Blocking: this call ends with a firmware update and a factory reset, which
  *       reboot the device, so - as with cm_hal_HTTP_Download_Reboot_Now() - the
- *       expectation under `Blocking calls` (docs/pages/halSpec.md) that a call returns
+ *       expectation under `Blocking calls` in the HAL specification that a call returns
  *       promptly does not usefully bound it, and no numeric timeout is specified. A
  *       caller treats it as the last thing it does.
  * @warning The image URL and name are caller-supplied and this interface specifies no
@@ -2527,7 +2527,7 @@ INT cm_hal_HTTP_Download_Reboot_Now();
  *          cm_hal_Set_HTTP_Download_Url(), because this call installs the image and
  *          then discards the configuration that could have been used to recover: the
  *          trust decision about the source is entirely the caller's.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2545,7 +2545,7 @@ INT cm_hal_FWupdateAndFactoryReset(char *pUrl, char *pImagename);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2562,7 +2562,7 @@ INT cm_hal_FWupdateAndFactoryReset(char *pUrl, char *pImagename);
  *         modem is the cause this declaration names. Whether the MAC layer was left
  *         untouched, partly re-initialised or locked is not reported.
  *         The reason is not reported either: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client looks for the cause in the vendor log `cm_vendor_hal.log` under
  *         `/rdklogs/logs/`. The call takes no arguments, so there is nothing at the
  *         call site to correct in response: a client reads docsis_getCMStatus() and
@@ -2571,12 +2571,12 @@ INT cm_hal_FWupdateAndFactoryReset(char *pUrl, char *pImagename);
  *
  * @note The declaration takes an empty parameter list rather than `(void)`, so in C
  *       it does not prototype its arguments; a caller passes none.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2605,7 +2605,7 @@ INT cm_hal_ReinitMac();
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2618,16 +2618,16 @@ INT cm_hal_ReinitMac();
  * @retval RETURN_ERR - Nothing may be read; a NULL pointer and a failed read are
  *         reported identically.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2646,7 +2646,7 @@ INT docsis_GetProvIpType(CHAR *pValue);
  *                     path as a NUL-terminated string, for example
  *                     "/nvram/cmcert.bin". Termination here is the requirement
  *                     `Memory Model` -> `Module Responsibilities`
- *                     (docs/pages/halSpec.md) places on every string this module
+ *                     in the HAL specification places on every string this module
  *                     produces, rather than something the declaration itself states,
  *                     and no length out-parameter accompanies the buffer, so the
  *                     terminator is the only extent a caller has. It must not be
@@ -2659,7 +2659,7 @@ INT docsis_GetProvIpType(CHAR *pValue);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2672,7 +2672,7 @@ INT docsis_GetProvIpType(CHAR *pValue);
  *         access problem are reported identically, so a caller cannot tell "no
  *         certificate installed" from "could not look" through this call.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
@@ -2681,12 +2681,12 @@ INT docsis_GetProvIpType(CHAR *pValue);
  *          states nothing about its provenance or its contents, so a caller that acts
  *          on it treats it as data from the implementation rather than as a trusted
  *          constant, and must not assume the file exists or is readable.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2708,7 +2708,7 @@ INT docsis_GetCert(CHAR *pCert);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2720,16 +2720,16 @@ INT docsis_GetCert(CHAR *pCert);
  * @retval RETURN_ERR - No state may be read; a NULL pointer and an inability to reach
  *         the configuration are reported identically.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2756,7 +2756,7 @@ INT docsis_GetCertStatus(ULONG *pVal);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2767,15 +2767,15 @@ INT docsis_GetCertStatus(ULONG *pVal);
  * @retval RETURN_OK  - The count was written and may be read.
  * @retval RETURN_ERR - No count may be read. A NULL pointer and an inability to reach
  *         the reset data are reported identically, and `Optional Components`
- *         (docs/pages/halSpec.md) records that this interface does not establish
+ *         in the HAL specification records that this interface does not establish
  *         whether every platform implements the reset counters, so a client treats a
  *         persistent failure as "not reported here" rather than as a fault.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2802,7 +2802,7 @@ INT cm_hal_Get_CableModemResetCount(ULONG *resetcnt);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2813,15 +2813,15 @@ INT cm_hal_Get_CableModemResetCount(ULONG *resetcnt);
  * @retval RETURN_OK  - The count was written and may be read.
  * @retval RETURN_ERR - No count may be read. A NULL pointer and an inability to reach
  *         the reset data are reported identically, and `Optional Components`
- *         (docs/pages/halSpec.md) records that this interface does not establish
+ *         in the HAL specification records that this interface does not establish
  *         whether every platform implements the reset counters, so a client treats a
  *         persistent failure as "not reported here" rather than as a fault.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2849,7 +2849,7 @@ INT cm_hal_Get_LocalResetCount(ULONG *resetcnt);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2860,15 +2860,15 @@ INT cm_hal_Get_LocalResetCount(ULONG *resetcnt);
  * @retval RETURN_OK  - The count was written and may be read.
  * @retval RETURN_ERR - No count may be read. A NULL pointer and an inability to reach
  *         the reset data are reported identically, and `Optional Components`
- *         (docs/pages/halSpec.md) records that this interface does not establish
+ *         in the HAL specification records that this interface does not establish
  *         whether every platform implements the reset counters, so a client treats a
  *         persistent failure as "not reported here" rather than as a fault.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2895,7 +2895,7 @@ INT cm_hal_Get_DocsisResetCount(ULONG *resetcnt);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2906,15 +2906,15 @@ INT cm_hal_Get_DocsisResetCount(ULONG *resetcnt);
  * @retval RETURN_OK  - The count was written and may be read.
  * @retval RETURN_ERR - No count may be read. A NULL pointer and an inability to reach
  *         the reset data are reported identically, and `Optional Components`
- *         (docs/pages/halSpec.md) records that this interface does not establish
+ *         in the HAL specification records that this interface does not establish
  *         whether every platform implements the reset counters, so a client treats a
  *         persistent failure as "not reported here" rather than as a fault.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2935,7 +2935,7 @@ INT cm_hal_Get_ErouterResetCount(ULONG *resetcnt);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -2955,12 +2955,12 @@ INT cm_hal_Get_ErouterResetCount(ULONG *resetcnt);
  * as its only evidence, must not infer the indicator's state from the call, and - the LED
  * being cosmetic, with no other operation depending on it - can only log and carry on.
  *
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -2992,13 +2992,13 @@ INT cm_hal_HTTP_LED_Flash(BOOLEAN LedFlash);
  * @param[out] output_NumberOfEntries - Caller-owned location for the number of records
  *                      in the array. It must not be NULL. Zero is a meaningful answer
  *                      rather than a failure: `Optional Components`
- *                      (docs/pages/halSpec.md) records that a modem on an earlier
+ *                      in the HAL specification records that a modem on an earlier
  *                      DOCSIS generation has no such channel to report and that this
  *                      interface defines no distinct code for that case.
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -3012,7 +3012,7 @@ INT cm_hal_HTTP_LED_Flash(BOOLEAN LedFlash);
  *         subject to the reported count and is responsible for releasing it.
  * @retval RETURN_ERR - No table may be read.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly typed argument is a call-site defect that retrying cannot fix.
@@ -3020,19 +3020,19 @@ INT cm_hal_HTTP_LED_Flash(BOOLEAN LedFlash);
  * @note Allocation and ownership. This is one of the five calls in this interface
  *       that hand back memory the caller must release: the caller deallocates
  *       `ppinfo`, and `Memory Model` -> `Caller Responsibilities`
- *       (docs/pages/halSpec.md) names docsis_GetDsOfdmChanTable() among the three
+ *       in the HAL specification names docsis_GetDsOfdmChanTable() among the three
  *       table calls that return a dynamically allocated array whose length they
  *       report through their entry-count argument. The interface names
  *       neither the allocator nor the release function that matches it, and does not
  *       state whether the outputs are written on failure, so a caller agrees the
  *       release convention with the vendor implementation and initialises `*ppinfo`
  *       to NULL before the call.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -3064,13 +3064,13 @@ INT docsis_GetDsOfdmChanTable(PDOCSIF31_CM_DS_OFDM_CHAN *ppinfo, int *output_Num
  * @param[out] output_NumberOfEntries - Caller-owned location for the number of records
  *                      in the array. It must not be NULL. Zero is a meaningful answer
  *                      rather than a failure: `Optional Components`
- *                      (docs/pages/halSpec.md) records that a modem on an earlier
+ *                      in the HAL specification records that a modem on an earlier
  *                      DOCSIS generation has no such channel to report and that this
  *                      interface defines no distinct code for that case.
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -3084,7 +3084,7 @@ INT docsis_GetDsOfdmChanTable(PDOCSIF31_CM_DS_OFDM_CHAN *ppinfo, int *output_Num
  *         subject to the reported count and is responsible for releasing it.
  * @retval RETURN_ERR - No table may be read.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly typed argument is a call-site defect that retrying cannot fix.
@@ -3092,19 +3092,19 @@ INT docsis_GetDsOfdmChanTable(PDOCSIF31_CM_DS_OFDM_CHAN *ppinfo, int *output_Num
  * @note Allocation and ownership. This is one of the five calls in this interface
  *       that hand back memory the caller must release: the caller deallocates
  *       `ppinfo`, and `Memory Model` -> `Caller Responsibilities`
- *       (docs/pages/halSpec.md) names docsis_GetUsOfdmaChanTable() among the three
+ *       in the HAL specification names docsis_GetUsOfdmaChanTable() among the three
  *       table calls that return a dynamically allocated array whose length they
  *       report through their entry-count argument. The interface names
  *       neither the allocator nor the release function that matches it, and does not
  *       state whether the outputs are written on failure, so a caller agrees the
  *       release convention with the vendor implementation and initialises `*ppinfo`
  *       to NULL before the call.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -3135,13 +3135,13 @@ INT docsis_GetUsOfdmaChanTable(PDOCSIF31_CM_US_OFDMA_CHAN *ppinfo, int *output_N
  * @param[out] output_NumberOfEntries - Caller-owned location for the number of records
  *                      in the array. It must not be NULL. Zero is a meaningful answer
  *                      rather than a failure: `Optional Components`
- *                      (docs/pages/halSpec.md) records that a modem on an earlier
+ *                      in the HAL specification records that a modem on an earlier
  *                      DOCSIS generation has no such channel to report and that this
  *                      interface defines no distinct code for that case.
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -3155,7 +3155,7 @@ INT docsis_GetUsOfdmaChanTable(PDOCSIF31_CM_US_OFDMA_CHAN *ppinfo, int *output_N
  *         subject to the reported count and is responsible for releasing it.
  * @retval RETURN_ERR - No table may be read.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly typed argument is a call-site defect that retrying cannot fix.
@@ -3163,19 +3163,19 @@ INT docsis_GetUsOfdmaChanTable(PDOCSIF31_CM_US_OFDMA_CHAN *ppinfo, int *output_N
  * @note Allocation and ownership. This is one of the five calls in this interface
  *       that hand back memory the caller must release: the caller deallocates
  *       `ppinfo`, and `Memory Model` -> `Caller Responsibilities`
- *       (docs/pages/halSpec.md) names docsis_GetStatusOfdmaUsTable() among the three
+ *       in the HAL specification names docsis_GetStatusOfdmaUsTable() among the three
  *       table calls that return a dynamically allocated array whose length they
  *       report through their entry-count argument. The interface names
  *       neither the allocator nor the release function that matches it, and does not
  *       state whether the outputs are written on failure, so a caller agrees the
  *       release convention with the vendor implementation and initialises `*ppinfo`
  *       to NULL before the call.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -3192,7 +3192,7 @@ INT docsis_GetStatusOfdmaUsTable(PDOCSIF31_CMSTATUSOFDMA_US *ppinfo, int *output
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -3209,19 +3209,19 @@ INT docsis_GetStatusOfdmaUsTable(PDOCSIF31_CMSTATUSOFDMA_US *ppinfo, int *output
  * @retval DISABLE LLD is disabled in the bootfile, or the entry is absent altogether. This
  *         interface does not distinguish the two, so a client cannot tell "provisioned
  *         off" from "not provisioned" - which `Optional Components`
- *         (docs/pages/halSpec.md) states explicitly - and must not read DISABLE as an
+ *         in the HAL specification states explicitly - and must not read DISABLE as an
  *         error.
  * @retval RETURN_ERR The status could not be retrieved - for example an unreadable bootfile
  *         or firmware that does not support the query. It is the only value that reports a
  *         failure, so a client tests for it specifically, logs it and consults
  *         `cm_vendor_hal.log`, and must not treat DISABLE as an error.
  *
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -3268,7 +3268,7 @@ INT docsis_LLDgetEnableStatus();
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -3281,10 +3281,10 @@ INT docsis_LLDgetEnableStatus();
  * @retval RETURN_OK  - The parameters were installed.
  * @retval RETURN_ERR - The request did not succeed. An invalid table and a failure
  *         inside the SNMPv3 setup are reported identically. `Optional Components`
- *         (docs/pages/halSpec.md) records that this interface does not establish
+ *         in the HAL specification records that this interface does not establish
  *         whether every platform implements this call.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client looks for the cause in the vendor log `cm_vendor_hal.log` under
  *         `/rdklogs/logs/`. How much of the table was applied is not reported either,
  *         so the client must not read the failure as meaning that no row was installed,
@@ -3299,12 +3299,12 @@ INT docsis_LLDgetEnableStatus();
  *          not place them anywhere it would not place a credential - in particular not
  *          in its own diagnostics. Nothing in this interface returns them, which is
  *          the one property a caller can rely on.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -3328,7 +3328,7 @@ INT cm_hal_snmpv3_kickstart_initialize(snmpv3_kickstart_table_t *pKickstart_Tabl
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -3343,16 +3343,16 @@ INT cm_hal_snmpv3_kickstart_initialize(snmpv3_kickstart_table_t *pKickstart_Tabl
  *         persistent failure treats energy detection as unavailable on the platform
  *         rather than as "no signal".
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -3366,7 +3366,7 @@ INT docsis_IsEnergyDetected(BOOLEAN *pEnergyDetected);
  * The automatic counterpart of cm_hal_ReinitMac(): once the modem's internal count of
  * the condition being watched reaches this threshold, the MAC layer is re-initialised
  * without a caller asking. It is one of the few values this interface lets a caller
- * write, and `Persistence Model` (docs/pages/halSpec.md) states no persistence
+ * write, and `Persistence Model` in the HAL specification states no persistence
  * guarantee for it, so it is re-applied after a restart if it must hold.
  *
  * @param[in] value - The threshold to apply. This interface states no valid range for
@@ -3378,7 +3378,7 @@ INT docsis_IsEnergyDetected(BOOLEAN *pEnergyDetected);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -3391,19 +3391,19 @@ INT docsis_IsEnergyDetected(BOOLEAN *pEnergyDetected);
  * @retval RETURN_ERR - The request did not succeed; a rejected value, a validation
  *         failure and a configuration error are reported identically.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client looks for the cause in the vendor log `cm_vendor_hal.log` under
  *         `/rdklogs/logs/`. Because the resulting threshold is unspecified, the client
  *         determines it by reading cm_hal_get_ReinitMacThreshold() back rather than
  *         assuming either value, and corrects a value the implementation rejects at the
  *         call site, which a retry cannot fix, before relying on automatic MAC
  *         re-initialisation.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -3428,7 +3428,7 @@ INT cm_hal_set_ReinitMacThreshold(ULONG value);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -3440,16 +3440,16 @@ INT cm_hal_set_ReinitMacThreshold(ULONG value);
  * @retval RETURN_ERR - No threshold may be read; a NULL pointer and a failed read are
  *         reported identically.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -3462,7 +3462,7 @@ INT cm_hal_get_ReinitMacThreshold(ULONG *pValue);
  *
  * A diplexer separates upstream from downstream by frequency, and its band edges
  * differ between regional plant designs - `Platform or Product Customization`
- * (docs/pages/halSpec.md) names this call as one of the runtime readings that express
+ * in the HAL specification names this call as one of the runtime readings that express
  * product variation in this interface. The whole diplexer facility is optional: a
  * vendor may ship it as a stub, as the registration function's documented failure case
  * records.
@@ -3476,7 +3476,7 @@ INT cm_hal_get_ReinitMacThreshold(ULONG *pValue);
  *
  * @pre cm_hal_InitDB(), docsis_InitDS() and docsis_InitUS() have been called and
  *      cm_hal_InitDB() returned RETURN_OK; `Initialization and Startup`
- *      (docs/pages/halSpec.md) makes that sequence mandatory before any other
+ *      in the HAL specification makes that sequence mandatory before any other
  *      operation. No code distinguishes "not initialized" from any other failure, so
  *      a caller that skips it gets RETURN_ERR at best and undefined behaviour at
  *      worst, and must enforce the order itself.
@@ -3491,16 +3491,16 @@ INT cm_hal_get_ReinitMacThreshold(ULONG *pValue);
  *         reported identically, so a client treats a persistent failure as "not
  *         reported on this platform" rather than as a fault.
  *         The reason is not reported: `Internal Error Handling`
- *         (docs/pages/halSpec.md) makes RETURN_ERR the only failure code, so a
+ *         in the HAL specification makes RETURN_ERR the only failure code, so a
  *         client discards the output, looks for the cause in the vendor log
  *         `cm_vendor_hal.log` under `/rdklogs/logs/`, and may retry. A NULL or
  *         wrongly sized argument is a call-site defect that retrying cannot fix.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
@@ -3553,14 +3553,14 @@ INT cm_hal_get_DiplexerSettings(CM_DIPLEXER_SETTINGS *pValue);
  *         handler must not rely on the value having any effect and should record the
  *         condition itself.
  *
- * @note Blocking: the handler must not block. `Blocking calls` (docs/pages/halSpec.md)
+ * @note Blocking: the handler must not block. `Blocking calls` in the HAL specification
  *       requires calls in this interface not to suspend their context, and the handler
  *       runs in a context belonging to the implementation, so it should record the new
  *       settings and return, leaving any lengthy reaction to the caller's own thread.
  * @warning Thread safety is the handler's own problem, and this is the sharpest
  *          consequence of it. **This interface does not specify which thread the
  *          handler is invoked on** - neither this typedef nor its registration
- *          function states it, which `Threading Model` (docs/pages/halSpec.md) records
+ *          function states it, which `Threading Model` in the HAL specification records
  *          - so a handler must serialise its own access to any caller state it
  *          touches, must not assume it runs on the registering thread, and must not
  *          assume it is invoked only once at a time.
@@ -3583,7 +3583,7 @@ typedef INT (*cm_hal_DiplexerVariationCallback)(CM_DIPLEXER_SETTINGS stCMDiplexe
  * The only registration function in this interface, and it is one-way: there is no
  * unregister call, so a caller installs the handler once, during initialization, and it
  * remains installed for the lifetime of the process. `Asynchronous Notification Model`
- * (docs/pages/halSpec.md) sets out the four properties of the notification this binds.
+ * in the HAL specification sets out the four properties of the notification this binds.
  *
  * @param[in] callback_proc - The handler to install, of type
  *                       `cm_hal_DiplexerVariationCallback`. It is invoked with a
@@ -3600,7 +3600,7 @@ typedef INT (*cm_hal_DiplexerVariationCallback)(CM_DIPLEXER_SETTINGS stCMDiplexe
  *
  * @pre cm_hal_InitDB() has returned RETURN_OK. This declaration states that the
  *      callback "should be provided during initialization", and `Method Sequencing`
- *      (docs/pages/halSpec.md) repeats it: because the registration cannot be undone,
+ *      in the HAL specification repeats it: because the registration cannot be undone,
  *      doing it late leaves a window in which changes are missed and no later call
  *      closes it.
  * @post On RETURN_OK the handler is installed permanently and may be invoked at any
@@ -3613,7 +3613,7 @@ typedef INT (*cm_hal_DiplexerVariationCallback)(CM_DIPLEXER_SETTINGS stCMDiplexe
  * @retval RETURN_ERR - The registration did not succeed. This declaration names two
  *         causes and does not distinguish them: the facility is not supported or not
  *         implemented on the platform - a stub, which `Optional Components`
- *         (docs/pages/halSpec.md) treats as a legitimate vendor choice - or a
+ *         in the HAL specification treats as a legitimate vendor choice - or a
  *         misconfiguration. The client action differs from the usual one accordingly:
  *         it treats a failure as "this platform does not report diplexer variation",
  *         reads the settings by polling cm_hal_get_DiplexerSettings() instead, and does
@@ -3624,12 +3624,12 @@ typedef INT (*cm_hal_DiplexerVariationCallback)(CM_DIPLEXER_SETTINGS stCMDiplexe
  *       RETURN_ERR is all it defines today, so the two causes above cannot be told
  *       apart from the return value, and a caller that needs to know consults the
  *       vendor log `cm_vendor_hal.log` under `/rdklogs/logs/`.
- * @note Blocking: synchronous. `Blocking calls` (docs/pages/halSpec.md) requires
+ * @note Blocking: synchronous. `Blocking calls` in the HAL specification requires
  *       every call in this interface to complete within a period commensurate with
  *       the operation and not to suspend the calling thread. No numeric timeout is
  *       specified by this interface, so a caller that cannot tolerate an unbounded
  *       wait imposes its own bound.
- * @warning Not thread safe. `Threading Model` (docs/pages/halSpec.md) states that
+ * @warning Not thread safe. `Threading Model` in the HAL specification states that
  *          this interface is not required to be thread safe, so the caller
  *          serialises this call against every other CM HAL call, including calls
  *          made from another process.
