@@ -55,11 +55,8 @@ The diagram below shows the software architecture of the `CM HAL` stack.
 
 ```mermaid
 flowchart TD
-    caller["CcspCMAgent"] --> hal["CM HAL (cm_hal.h, libcm_mgnt.so)"];
-    hal --> vendor["Vendor Software"];
-    style caller fill:#0088ff;
-    style hal fill:#0088ff;
-    style vendor fill:#00ffee;
+    Caller["CcspCMAgent"] <--> HAL["CM HAL - cm_hal.h"]
+    HAL <--> Vendor["Vendor Software"]
 ```
 
 **What this interface declares:**
@@ -81,7 +78,7 @@ The following components are optional and it is up to the vendor's discretion wh
 
 - **Diplexer configuration and its notification.** `cm_hal_get_DiplexerSettings()` reads the current upstream and downstream diplexer band edges, and `cm_hal_Register_DiplexerVariationCallback()` installs the handler that follows their changes. A vendor may ship the registration as a stub that returns `RETURN_ERR`, so a caller treats a failed registration as "this platform does not report diplexer variation" and continues without retrying.
 - **Low Latency DOCSIS.** `docsis_LLDgetEnableStatus()` returns `DISABLE` both when `LLD` is disabled and when the entry is missing from the modem's bootfile, so a caller cannot tell the two apart.
-- `DOCSIS 3.1` **channel tables.** `docsis_GetDsOfdmChanTable()`, `docsis_GetUsOfdmaChanTable()` and `docsis_GetStatusOfdmaUsTable()` describe `DOCSIS 3.1` `OFDM` and `OFDMA` channels; a modem operating on an earlier `DOCSIS` generation has none to report. A caller reads the entry count these functions write and treats zero entries as "none present" rather than as a failure.
+- **DOCSIS 3.1 channel tables.** `docsis_GetDsOfdmChanTable()`, `docsis_GetUsOfdmaChanTable()` and `docsis_GetStatusOfdmaUsTable()` describe `DOCSIS 3.1` `OFDM` and `OFDMA` channels; a modem operating on an earlier `DOCSIS` generation has none to report. A caller reads the entry count these functions write and treats zero entries as "none present" rather than as a failure.
 
 ## Component Runtime Execution Requirements
 
@@ -201,7 +198,7 @@ Both `HAL` wrapper and 3rd party software implementations should prioritize robu
 
 ### Licensing
 
-The `CM HAL` implementation is expected to be released under the Apache License 2.0. The licence text is in `LICENSE`, with attribution in `NOTICE` and the copyright statement in `COPYING`.
+The `CM HAL` implementation is expected to be released under the Apache License 2.0. The licence text is in `LICENSE`, with attribution in `NOTICE`; `COPYING` is a symbolic link to `LICENSE` and holds the same licence text.
 
 ### Build Requirements
 
@@ -644,4 +641,4 @@ A caller relies on the buffer holding one value at a time. It must not treat a v
 - [rdkcentral/rdkb-halif-cm/.github/CODEOWNERS](https://github.com/rdkcentral/rdkb-halif-cm/blob/develop/.github/CODEOWNERS) — repository owner and reviewer
 - [rdkcentral/rdkb-halif-cm/LICENSE](https://github.com/rdkcentral/rdkb-halif-cm/blob/develop/LICENSE) — Apache License 2.0 text
 - [rdkcentral/rdkb-halif-cm/NOTICE](https://github.com/rdkcentral/rdkb-halif-cm/blob/develop/NOTICE) — attribution notice
-- [rdkcentral/rdkb-halif-cm/COPYING](https://github.com/rdkcentral/rdkb-halif-cm/blob/develop/COPYING) — copyright statement
+- [rdkcentral/rdkb-halif-cm/COPYING](https://github.com/rdkcentral/rdkb-halif-cm/blob/develop/COPYING) — Apache License 2.0 text, a symbolic link to `LICENSE`
