@@ -91,7 +91,7 @@ This interface is delivered as a shared library that the caller links against, a
 
 During initialization and startup, the caller (`CcspCMAgent`) must invoke the following APIs in this order:
 
-- `cm_hal_InitDB()` - initializes the `HAL` and its dependencies. It fails if it cannot create threads or open files.
+- `cm_hal_InitDB()` - initializes the `HAL` and the database connections and subsystems the rest of the interface relies on. It fails if it cannot create threads or open files.
 - `docsis_InitDS()` - prepares the global `PHY`-level data structures and direct hardware access for the downstream (`DS`) direction.
 - `docsis_InitUS()` - the same for the upstream (`US`) direction.
 
@@ -144,15 +144,14 @@ The handler must not block: it records the new settings and returns, leaving any
 
 ### Blocking calls
 
-The APIs are synchronous and must complete within a time commensurate with the operation. They are called from a single thread context and therefore must not suspend. Calls that wait on a response from a connected device time out in accordance with their API documentation.
+The APIs are synchronous and must complete within a time commensurate with the operation. They are called from a single thread context and therefore must not suspend, with one exception: `cm_hal_InitDB()` blocks while the hardware is not ready, so the caller performs initialization on a thread that nothing else waits on. Calls that wait on a response from a connected device time out in accordance with their API documentation.
 
-- `cm_hal_InitDB()` blocks while the hardware is not ready, so the caller performs initialization on a thread that nothing else waits on.
 - `docsis_ClearDocsisEventLog()` must not block or use blocking system calls; it starts the clearing asynchronously and returns.
 - `cm_hal_HTTP_Download()` initiates a firmware download, and `cm_hal_Get_HTTP_Download_Status()` reports its progress.
 
 ### Internal Error Handling
 
-**Synchronous Error Handling:** All `CM HAL` APIs must return errors, including internal system errors such as out-of-memory conditions, synchronously as a return value.
+**Synchronous Error Handling:** Each `CM HAL` function that returns a status must report its outcome, including internal system errors such as out-of-memory conditions, synchronously through that return value.
 
 **Focus on Logging for Errors:** For system errors, the `HAL` should prioritize logging the error details for further investigation and resolution. Recovery attempts at the interface level are not expected to be successful in these cases.
 
@@ -160,11 +159,13 @@ The APIs are synchronous and must complete within a time commensurate with the o
 
 | Return shape | Declarations | What a caller does with it |
 | --- | --- | --- |
-| A status code | 45 of the 51 declarations, plus the callback | Compares against `RETURN_OK` and `RETURN_ERR`, and finds the cause of a failure in the vendor log. |
+| A status code | 45 of the 51 declarations, plus the callback | Treats only `RETURN_OK` as success and any other value as a failure, whose cause is in the vendor log; `docsis_LLDgetEnableStatus()` is the exception noted below the table. |
 | A value, not a status | `docsis_GetUSChannelId()` returns the channel identifier, `docsis_GetDownFreq()` the frequency, `docsis_GetDocsisEventLogItems()` the number of log entries retrieved, and `cm_hal_Get_HTTP_Download_Status()` the download progress or error | Treats a zero count from `docsis_GetDocsisEventLogItems()` as a valid answer. Reads `cm_hal_Get_HTTP_Download_Status()` as `0` not started, `1` to `99` percent complete, `100` ready to reboot, and `400` to `407` or `500` failed. Validates the channel identifier and frequency against the modem's reported state, because neither carries an error indication. |
 | Nothing at all | `docsis_SetUSChannelId()` and `docsis_SetStartFreq()` are declared `void` | Confirms the write by reading the value back with `docsis_GetUSChannelId()` or `docsis_GetDownFreq()`. |
 
 `docsis_LLDgetEnableStatus()` returns `ENABLE`, `DISABLE` or `RETURN_ERR`; only `RETURN_ERR` indicates a failed read.
+
+A caller moves on to the next initializer, or to any other call, only after the current initializer returns `RETURN_OK`; any other result from `cm_hal_InitDB()`, `docsis_InitDS()` or `docsis_InitUS()` leaves the `HAL` unusable for the rest of the process.
 
 ### Persistence Model
 
@@ -238,7 +239,7 @@ All `HAL` function prototypes and datatype definitions are available in the `cm_
 
 #### Object Lifecycles
 
-- **Creation/Initialization:** `cm_hal_InitDB()` sets up the database connections and subsystems the cable modem operations rely on, and `docsis_InitDS()` and `docsis_InitUS()` then prepare the downstream and upstream `PHY` layers, in the order `Initialization and Startup` requires.
+- **Creation/Initialization:** The `HAL` is brought into use by the initialization sequence under `Initialization and Startup`.
 - **Usage:** After initialization, the caller configures and queries modem parameters, reads downstream and upstream channel information, handles the diplexer notification and controls operational states.
 - **Destruction/Cleanup:** The interface has no de-initialization function, so it cannot be released and re-acquired within one process. Cleanup within the `HAL` happens when the application terminates, and the caller frees the allocations listed under `Caller Responsibilities`.
 
@@ -541,7 +542,7 @@ The remaining functions - the certificate, provisioning-type, market, reset-coun
 
 Two state vocabularies apply. The `HAL` lifecycle is established by the pre-conditions and post-conditions of the three initializers and is drawn below. The modem's `DOCSIS` status is a set of reported values, not a state machine, so it is tabulated rather than drawn with transitions.
 
-**The `HAL` lifecycle.** `cm_hal_InitDB` must return `RETURN_OK` before any other function is called, `docsis_InitDS` follows it, and `docsis_InitUS` completes the mandatory sequence, after which every function is callable.
+**The `HAL` lifecycle.** The diagram follows the initialization order under `Initialization and Startup`; every function is callable once `docsis_InitUS` returns `RETURN_OK`.
 
 ```mermaid
 stateDiagram-v2
@@ -552,7 +553,7 @@ stateDiagram-v2
     FullyInitialized --> [*] : cm_hal_HTTP_Download_Reboot_Now() or cm_hal_FWupdateAndFactoryReset() - the device restarts
 ```
 
-There is no edge back to `Uninitialized` within one process, as `Object Lifecycles` explains. After a failed initializer a caller treats the `HAL` as unusable rather than retrying from a known point. Both terminal calls restart the device, so a caller must not rely on any code after them executing.
+There is no edge back to `Uninitialized` within one process, as `Object Lifecycles` explains. `Internal Error Handling` states the caller's response to a failed initializer. Both terminal calls restart the device, so a caller must not rely on any code after them executing.
 
 `cm_hal_ReinitMac` resets the modem's `MAC` layer while preserving the downstream and upstream channels; it does not change the `HAL` lifecycle state. Afterwards a caller polls `docsis_getCMStatus` until the modem reports the state it needs.
 
@@ -580,11 +581,11 @@ There is no edge back to `Uninitialized` within one process, as `Object Lifecycl
 | `OTHER` | Not mapped | A state the implementation reports as none of the above. |
 | `Unsupported status` | Not mapped | What an implementation reports for a state it cannot map onto the others. |
 
-The same values, grouped by what their spellings name:
+The same values, by the groups in the table above:
 
 ```mermaid
 flowchart LR
-    subgraph phase["Spelling names a completed bring-up phase"]
+    subgraph phase["Bring-up"]
         direction LR
         p0["NOT_READY"]
         p1["NOT_SYNCHRONIZED"]
@@ -599,7 +600,7 @@ flowchart LR
         p10["REGISTRATION_COMPLETE"]
         p11["OPERATIONAL"]
     end
-    subgraph prog["Spelling names a phase under way"]
+    subgraph prog["In progress"]
         direction LR
         q0["RANGING_IN_PROGRESS"]
         q1["DHCPV4_IN_PROGRESS"]
@@ -609,7 +610,7 @@ flowchart LR
         q5["DS_TOPOLOGY_RESOLUTION_IN_PROGRESS"]
         q6["BPI_INIT"]
     end
-    subgraph cond["Spelling names a condition, not a phase"]
+    subgraph cond["Condition"]
         direction LR
         c0["ACCESS_DENIED"]
         c1["FORWARDING_DISABLED"]
