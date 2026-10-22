@@ -147,10 +147,6 @@ The APIs are synchronous and must complete within a time commensurate with the o
 
 ### Internal Error Handling
 
-**Synchronous Error Handling:** Each CM HAL function that returns a status must report its outcome, including internal system errors such as out-of-memory conditions, synchronously through that return value.
-
-**Focus on Logging for Errors:** For system errors, the HAL should prioritize logging the error details for further investigation and resolution.
-
 `RETURN_OK` is `0` and `RETURN_ERR` is `-1`. A caller reads the return type before the return value, because three return shapes exist:
 
 | Return shape | Declarations | What a caller does with it |
