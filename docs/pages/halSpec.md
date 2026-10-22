@@ -444,52 +444,52 @@ participant Vendor as Vendor Software
 Note over Caller,HAL: Initialization Process
 Caller->>HAL: cm_hal_InitDB()
 HAL->>Vendor: Initialize database and dependencies
-Vendor->>HAL: Initialization complete
-HAL->>Caller: RETURN_OK
+Vendor-->>HAL: Initialization complete
+HAL-->>Caller: RETURN_OK
 
 Note over Caller,HAL: DOCSIS Initialization
 Caller->>HAL: docsis_InitDS()
 HAL->>Vendor: Initialize the downstream PHY layer
-Vendor->>HAL: Downstream initialized
-HAL->>Caller: RETURN_OK
+Vendor-->>HAL: Downstream initialized
+HAL-->>Caller: RETURN_OK
 Caller->>HAL: docsis_InitUS()
 HAL->>Vendor: Initialize the upstream PHY layer
-Vendor->>HAL: Upstream initialized
-HAL->>Caller: RETURN_OK
+Vendor-->>HAL: Upstream initialized
+HAL-->>Caller: RETURN_OK
 
 Note over Caller,HAL: Notification registration, once and for the process lifetime
 Caller->>HAL: cm_hal_Register_DiplexerVariationCallback(handler)
-HAL->>Caller: RETURN_OK, or RETURN_ERR where unimplemented
+HAL-->>Caller: RETURN_OK, or RETURN_ERR where unimplemented
 
 Note over Caller,HAL: Normal Operation
 Caller->>HAL: docsis_getCMStatus()
 HAL->>Vendor: Read the modem registration state
-Vendor->>HAL: Status string
-HAL->>Caller: RETURN_OK with the status buffer filled
+Vendor-->>HAL: Status string
+HAL-->>Caller: RETURN_OK with the status buffer filled
 Caller->>HAL: docsis_GetDOCSISInfo()
 Caller->>HAL: docsis_GetDSChannel(), docsis_GetUSChannel()
-HAL->>Caller: Allocated channel structures the caller must free
+HAL-->>Caller: Allocated channel structures the caller must free
 Caller->>HAL: docsis_GetNumOfActiveRxChannels(), docsis_GetNumOfActiveTxChannels()
 Caller->>HAL: docsis_GetDsOfdmChanTable(), docsis_GetUsOfdmaChanTable(), docsis_GetStatusOfdmaUsTable()
 Caller->>HAL: cm_hal_GetDHCPInfo(), cm_hal_GetIPv6DHCPInfo(), cm_hal_GetCPEList()
 Caller->>HAL: docsis_GetErrorCodewords(), docsis_GetDocsisEventLogItems()
-HAL->>Caller: Entry count returned directly, not a status code
+HAL-->>Caller: Entry count returned directly, not a status code
 
 Note over Caller,HAL: Provisioning override and channel control
 Caller->>HAL: docsis_SetMddIpModeOverride()
 HAL->>Vendor: Apply the IP provisioning mode override
-Vendor->>HAL: Applied
-HAL->>Caller: RETURN_OK
+Vendor-->>HAL: Applied
+HAL-->>Caller: RETURN_OK
 Caller->>HAL: docsis_SetUSChannelId(), docsis_SetStartFreq()
 HAL->>Vendor: Apply the channel identifier and start frequency
 Caller->>HAL: docsis_GetUSChannelId(), docsis_GetDownFreq()
-HAL->>Caller: Values read back, since the setters report nothing
+HAL-->>Caller: Values read back, since the setters report nothing
 
 Note over Caller,HAL: Energy detection
 Caller->>HAL: docsis_IsEnergyDetected()
 HAL->>Vendor: Detect DOCSIS energy
-Vendor->>HAL: Energy detection result
-HAL->>Caller: RETURN_OK with the result flag set
+Vendor-->>HAL: Energy detection result
+HAL-->>Caller: RETURN_OK with the result flag set
 
 Note over Caller,HAL: Firmware download and reboot
 Caller->>HAL: cm_hal_Set_HTTP_Download_Url(), cm_hal_Set_HTTP_Download_Interface()
@@ -497,9 +497,9 @@ Caller->>HAL: cm_hal_HTTP_Download()
 HAL->>Vendor: Start the image transfer
 Caller->>HAL: cm_hal_HTTP_LED_Flash()
 Caller->>HAL: cm_hal_Get_HTTP_Download_Status()
-HAL->>Caller: Download progress, polled rather than pushed
+HAL-->>Caller: Download progress, polled rather than pushed
 Caller->>HAL: cm_hal_Reboot_Ready()
-HAL->>Caller: RETURN_OK with the readiness flag set
+HAL-->>Caller: RETURN_OK with the readiness flag set
 Caller->>HAL: cm_hal_HTTP_Download_Reboot_Now()
 
 Note over Caller,HAL: Recovery paths
@@ -508,14 +508,14 @@ HAL->>Vendor: Update firmware and reset to factory defaults
 Caller->>HAL: cm_hal_set_ReinitMacThreshold()
 Caller->>HAL: cm_hal_ReinitMac()
 HAL->>Vendor: Reset the MAC layer, preserving channels
-Vendor->>HAL: Reinitialization done
-HAL->>Caller: RETURN_OK
+Vendor-->>HAL: Reinitialization done
+HAL-->>Caller: RETURN_OK
 
 Note over Caller,HAL: SNMPv3 kickstart
 Caller->>HAL: cm_hal_snmpv3_kickstart_initialize()
 HAL->>Vendor: Initialize SNMPv3 security parameters
-Vendor->>HAL: SNMPv3 initialized
-HAL->>Caller: RETURN_OK
+Vendor-->>HAL: SNMPv3 initialized
+HAL-->>Caller: RETURN_OK
 
 Note over Caller,HAL: Asynchronous notification
 Vendor->>HAL: Diplexer settings change
